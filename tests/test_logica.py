@@ -84,3 +84,16 @@ def test_database_planner_en_leden(tmp_path):
     db.kv_schrijf("a", "1")
     db.kv_schrijf("a", "2")
     assert db.kv_lees("a") == "2"
+
+
+def test_vorige_maand_voor_de_hall_of_fame():
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
+    from bot.cogs.radar import vorige_maand
+
+    tz = ZoneInfo("Europe/Amsterdam")
+    begin, eind, sleutel, naam = vorige_maand(dt.datetime(2027, 1, 1, 12, tzinfo=tz))
+    assert sleutel == "2026-12" and naam == "december 2026"
+    assert dt.datetime.fromtimestamp(begin, tz) == dt.datetime(2026, 12, 1, tzinfo=tz)
+    assert dt.datetime.fromtimestamp(eind, tz) == dt.datetime(2027, 1, 1, tzinfo=tz)

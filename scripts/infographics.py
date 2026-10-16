@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from scripts.banners import PIXEL, ROOT, TYPES, UIT, blok, donker, energie, font, licht, meng, omloop, ster
+from scripts.banners import PIXEL, ROOT, TYPES, UIT, blok, donker, energie, font, kaart, licht, meng, omloop, ster
 
 INKT = (24, 30, 52)
 GRIJS = (92, 100, 124)
@@ -391,6 +391,83 @@ def weekritme() -> Path:
     return opslaan(img, "weekritme")
 
 
+def levelpad() -> Path:
+    """De levelrollen als oplopend pad, rechtstreeks uit haven/levels.py, met wat je bij elk level vrijspeelt."""
+    from haven.levels import GIVEAWAY_LEVEL, LEVEL_ROLLEN
+
+    hoog = 480
+    img = achtergrond(hoog, "gras")
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, "PRAAT MEE, STIJG IN LEVEL", TYPES["gras"][0], "gras")
+    rollen = sorted(LEVEL_ROLLEN)
+    typen = ["gras", "water", "elektrisch", "vuur", "draak"]
+    n = len(rollen)
+    marge = 130
+    xs = [marge + i * (BREED - 2 * marge) / (n - 1) for i in range(n)]
+    ys = [300 - i * 34 for i in range(n)]
+    stippelpad(d, list(zip(xs, ys)), ZAND)
+    tf, uf, lf = font("InterDisplay-Bold.otf", 25), font("Inter-Medium.otf", 19), font("Inter-Bold.otf", 17)
+    for i, ((lvl, naam), x, y) in enumerate(zip(rollen, xs, ys)):
+        t = typen[i % len(typen)]
+        badge(d, x, y, 52, t)
+        lbl = f"LEVEL {lvl}"
+        w = int(d.textlength(lbl, font=lf)) + 24
+        d.rounded_rectangle([x - w / 2, y - 92, x + w / 2, y - 64], radius=14, fill=INKT)
+        d.text((x, y - 78), lbl, font=lf, fill=(255, 255, 255), anchor="mm")
+        gecentreerd(d, x, y + 72, naam, tf, INKT, 220, 1)
+    # wat je vrijspeelt, onder de rol waar het bij hoort
+    beloning = {
+        "Nieuwe Trainer": f"Level {GIVEAWAY_LEVEL}: giveaways",
+        "Trainer": "Posten in de markt",
+        "Ace Trainer": "Eigen naamkleur",
+        "Gym Leader": "Apart in de ledenlijst",
+        "Haven Legende": "Maand Sniper gratis",
+    }
+    for (lvl, naam), x, y in zip(rollen, xs, ys):
+        if naam in beloning:
+            gecentreerd(d, x, y + 108, beloning[naam], uf, GRIJS, 220, 1)
+    return opslaan(img, "levels")
+
+
+def advertentie() -> Path:
+    """Een voorbeeld-advertentie in de markt: tag, foto's met naam en datum, prijs en conditie."""
+    hoog = 600
+    img = achtergrond(hoog, "metaal")
+    d = ImageDraw.Draw(img, "RGBA")
+    kleur = TYPES["metaal"][0]
+    pil(d, 48, 36, "ZO ZIET EEN GOEDE ADVERTENTIE ERUIT", kleur, "metaal")
+    px, py, pw, ph = 48, 100, 1104, 452
+    d.rounded_rectangle([px + 6, py + 10, px + pw + 6, py + ph + 10], radius=24, fill=(0, 0, 0, 36))
+    d.rounded_rectangle([px, py, px + pw, py + ph], radius=24, fill=(255, 255, 255), outline=licht(kleur, 0.3), width=3)
+    x = chip(d, px + 32, py + 28, "Te koop", TYPES["gras"][0])
+    d.text((x + 8, py + 46), "Charizard ex SIR · Obsidian Flames 223", font=font("InterDisplay-Bold.otf", 30), fill=INKT, anchor="lm")
+    # twee foto's: voor- en achterkant met een briefje
+    for i, (soort, label) in enumerate((("vuur", "Voorkant"), ("water", "Achterkant"))):
+        fx = px + 40 + i * 200
+        fy = py + 100
+        d.rounded_rectangle([fx, fy, fx + 180, fy + 300], radius=16, fill=(236, 240, 246))
+        k = kaart(TYPES[soort][0], soort, 0).resize((128, 178))
+        img.paste(k, (int(fx + 26), int(fy + 24)), k)
+        d.rounded_rectangle([fx + 22, fy + 214, fx + 158, fy + 260], radius=6, fill=(255, 250, 220), outline=(220, 200, 140))
+        d.text((fx + 90, fy + 229), "Sam", font=font("Inter-Bold.otf", 16), fill=INKT, anchor="mm")
+        d.text((fx + 90, fy + 248), "16-10", font=font("Inter-Medium.otf", 15), fill=GRIJS, anchor="mm")
+        d.text((fx + 90, fy + 284), label, font=font("Inter-SemiBold.otf", 17), fill=GRIJS, anchor="mm")
+    lf, vf = font("Inter-Bold.otf", 18), font("Inter-SemiBold.otf", 22)
+    rijen = [
+        ("PRIJS", "€ 85 of ruil tegen een SIR"),
+        ("CONDITIE", "Near Mint, uit de pack in de sleeve"),
+        ("VERZENDING", "Aangetekend, track & trace in de thread"),
+        ("VOUCHES", "12 · Verified Trader"),
+    ]
+    rx = px + 470
+    for i, (label, waarde) in enumerate(rijen):
+        y = py + 120 + i * 74
+        d.text((rx, y), label, font=lf, fill=GRIJS)
+        d.text((rx, y + 26), waarde, font=vf, fill=INKT)
+    return opslaan(img, "advertentie")
+
+
+
 def main() -> None:
     paden = [
         stappenstrook(
@@ -436,6 +513,27 @@ def main() -> None:
             ("Beste schatting wint", "Van iedereen met het goede antwoord"),
         ),
         mijlpaalladder(),
+        levelpad(),
+        advertentie(),
+        tegels(
+            "hulp-tags", "KIES DE TAG VAN JE VRAAG", "water",
+            [
+                ("Waarde", "Wat is mijn kaart waard?", "draak"),
+                ("Echt of nep", "Klopt deze kaart wel?", "vechten"),
+                ("Beginner", "Een Haven Helper helpt je", "gras"),
+                ("Opgelost", "Typ /opgelost als je antwoord hebt", "water"),
+            ],
+            genummerd=False,
+        ),
+        stappenstrook(
+            "radar-flow", "ZO WERKT DE WINKEL-RADAR", "psychisch",
+            [
+                ("Zie je voorraad?", "In een winkel bij jou in de buurt", "psychisch"),
+                ("Meld het", "Met /meld en een foto van het schap", "gras"),
+                ("Sniper direct", "Haven Sniper-leden zien het meteen", "elektrisch"),
+            ],
+            ("Na 10 minuten", "Iedereen, met een ping voor jouw regio"),
+        ),
     ]
     for p in paden:
         print(p.relative_to(ROOT))

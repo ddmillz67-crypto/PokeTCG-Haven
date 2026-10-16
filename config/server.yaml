@@ -39,8 +39,8 @@ rollen:
   - { naam: Haven Partner,        kleur: "#1E6FD9" }
   - { naam: Haven Ambassadeur,    kleur: "#00BCD4" }
   - { naam: Verified Trader,      kleur: "#1ABC9C" }
-  - { naam: Haven Legende,        kleur: "#F39C12" }   # level 50
-  - { naam: Gym Leader,           kleur: "#3498DB" }   # level 30
+  - { naam: Haven Legende,        kleur: "#F39C12", apart_tonen: true }   # level 50
+  - { naam: Gym Leader,           kleur: "#3498DB", apart_tonen: true }   # level 30
   - { naam: Ace Trainer,          kleur: "#5DADE2" }   # level 15
   - { naam: Trainer }                                  # level 5: markt
   - { naam: Nieuwe Trainer }                           # level 1

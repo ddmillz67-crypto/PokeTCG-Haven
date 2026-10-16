@@ -24,7 +24,7 @@ GEEN_XP = {"restocks", "sniper-nlbe", "sniper-eu", "success", "store", "tickets"
 MELDING = {
     "Trainer": "Je kunt nu posten in de markt!",
     "Ace Trainer": "Je naam heeft nu een eigen kleur.",
-    "Gym Leader": "Je staat nu in de Hall of Fame.",
+    "Gym Leader": "Je staat nu als Gym Leader apart in de ledenlijst.",
     "Haven Legende": "Als bedankje krijg je een maand gratis Haven Sniper!",
 }
 

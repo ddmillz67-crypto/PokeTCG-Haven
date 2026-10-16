@@ -68,7 +68,7 @@ def test_rollen_volgens_bouwplan(config):
     # 36 eigen rollen (NL/BE en EN zijn samen Lid geworden); met botrol en @everyone 38.
     assert len(config.rollen) == 36
     apart = {r.naam for r in config.rollen if r.apart_tonen}
-    assert apart == {"Admin", "Mod", "Haven Helper", "Creator", "Pull van de Week"}
+    assert apart == {"Admin", "Mod", "Haven Helper", "Creator", "Pull van de Week", "Gym Leader", "Haven Legende"}
     assert not {"Sniper", "Elite", "Founder"} & apart, "betaalde rollen horen niet apart in de ledenlijst"
 
 

@@ -18,3 +18,4 @@ berichten:
             waarde: "Typ `/opgelost` in je post. Dan krijgt hij de tag **Opgelost** en weten anderen dat het antwoord erin staat.\n​"
           - naam: "💡  Voorbeeld"
             waarde: "> *\"Is deze Pikachu echt? De achterkant voelt anders.\"*\nMet twee foto's en de tag **Echt of nep**."
+        afbeelding: "{afbeelding:hulp-tags}"
