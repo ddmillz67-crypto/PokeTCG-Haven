@@ -25,6 +25,7 @@ berichten:
           - naam: "💎  Haven Elite"
             waarde: "Alles van Sniper\nAlerts Duitsland & Frankrijk\nPrijsalerts singles\nSealed-rapport\nVoorrang group buys\n\n**€12,99 / maand**\n*binnenkort*"
             inline: true
+        afbeelding: "{afbeelding:store-vergelijking}"
 
   - sleutel: sniper
     embeds:
@@ -39,6 +40,7 @@ berichten:
 
           > Maandelijks opzegbaar.
         thumbnail: "{afbeelding:logo}"
+        afbeelding: "{afbeelding:alert-voorbeeld}"
     knoppen:
       - { label: "Koop via Whop", emoji: "🛒", url: "{env:WHOP_SNIPER_URL}" }
       - { label: "Meer info", emoji: "ℹ️", actie: "store:info:sniper" }
@@ -54,6 +56,7 @@ berichten:
           Een jaar **Haven Sniper**, plus **Haven Elite** zodra die live is, een vaste **Founder-badge** en **blijvende korting**.
 
           > Op = op.
+        afbeelding: "{afbeelding:founder-pas}"
     knoppen:
       - { label: "Koop via Whop", emoji: "🛒", url: "{env:WHOP_FOUNDER_URL}" }
       - { label: "Meer info", emoji: "ℹ️", actie: "store:info:founder" }

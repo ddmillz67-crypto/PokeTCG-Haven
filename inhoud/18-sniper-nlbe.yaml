@@ -17,3 +17,4 @@ berichten:
             waarde: "Klik op **Gescoord!** onder een alert. Je succes verschijnt in {#success}.\n​"
           - naam: "🤝  Eerlijk spel"
             waarde: "We sturen **alerts, geen koopbots**: je koopt zelf met de hand.\nZo loop je geen risico dat een winkel je bestelling annuleert."
+        afbeelding: "{afbeelding:alert-voorbeeld}"

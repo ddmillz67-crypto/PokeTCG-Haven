@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from scripts.banners import PIXEL, ROOT, TYPES, UIT, blok, donker, energie, font, kaart, licht, meng, omloop, ster
+from scripts.banners import PIXEL, ROOT, TYPES, UIT, blok, booster, donker, energie, font, kaart, licht, meng, omloop, ster
 
 INKT = (24, 30, 52)
 GRIJS = (92, 100, 124)
@@ -158,19 +158,20 @@ def tourkaart() -> Path:
     return opslaan(img, "tour-kaart")
 
 
-def tegels(naam: str, label: str, type_: str, items: list[tuple[str, str, str]], genummerd: bool = True) -> Path:
-    """Tegels met symbool, titel en één regel uitleg; 4 per rij."""
-    tw, th, gap = 258, 236, 22
-    rijen = (len(items) + 3) // 4
+def tegels(naam: str, label: str, type_: str, items: list[tuple[str, str, str]], genummerd: bool = True, per_rij: int = 4) -> Path:
+    """Tegels met symbool, titel en één regel uitleg."""
+    gap = 22
+    tw, th = (BREED - 2 * 50 - (per_rij - 1) * gap) // per_rij, 236
+    rijen = (len(items) + per_rij - 1) // per_rij
     hoog = 104 + rijen * th + (rijen - 1) * gap + 60
     img = achtergrond(hoog, type_)
     d = ImageDraw.Draw(img, "RGBA")
     pil(d, 48, 36, label, TYPES[type_][0], type_)
-    x0 = (BREED - 4 * tw - 3 * gap) // 2
-    tf, uf = font("InterDisplay-Bold.otf", 25), font("Inter-Medium.otf", 19)
+    x0 = (BREED - per_rij * tw - (per_rij - 1) * gap) // 2
+    tf, uf = font("InterDisplay-Bold.otf", 25 if per_rij <= 4 else 22), font("Inter-Medium.otf", 19 if per_rij <= 4 else 17)
     for i, (titel, uitleg, t) in enumerate(items):
-        x = x0 + (i % 4) * (tw + gap)
-        y = 104 + (i // 4) * (th + gap)
+        x = x0 + (i % per_rij) * (tw + gap)
+        y = 104 + (i // per_rij) * (th + gap)
         kleur = TYPES[t][0]
         d.rounded_rectangle([x + 4, y + 8, x + tw + 4, y + th + 8], radius=20, fill=(0, 0, 0, 30))
         d.rounded_rectangle([x, y, x + tw, y + th], radius=20, fill=(255, 255, 255), outline=licht(kleur, 0.3), width=3)
@@ -506,6 +507,118 @@ def alerttijdlijn() -> Path:
     return opslaan(img, "restocks-tijdlijn")
 
 
+def vink(d: ImageDraw.ImageDraw, x: float, y: float, kleur) -> None:
+    d.line([(x, y), (x + 6, y + 7), (x + 18, y - 7)], fill=kleur, width=5, joint="curve")
+
+
+def storevergelijking() -> Path:
+    """Gratis, Sniper en Elite naast elkaar, met wat je bij elk krijgt."""
+    hoog = 640
+    img = achtergrond(hoog, "draak")
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, "DE COMMUNITY BLIJFT ALTIJD GRATIS", TYPES["draak"][0], "draak")
+    plannen = [
+        ("Gratis", "€0", "fee", ["Alle community-kanalen", "Ruilen, hulp en giveaways", "Restocks na 10 minuten", "Winkel-radar na 10 minuten"], None),
+        ("Haven Sniper", "€6,99 / maand", "elektrisch", ["Alles van Gratis", "Alerts direct", "Persoonlijke meldingen", "Winkel-radar direct"], "MEEST GEKOZEN"),
+        ("Haven Elite", "€12,99 / maand", "duister", ["Alles van Sniper", "Alerts Duitsland en Frankrijk", "Prijsalerts voor singles", "Sealed-rapport en lounge"], "BINNENKORT"),
+    ]
+    kw, gap = 344, 24
+    x0 = (BREED - 3 * kw - 2 * gap) // 2
+    y0, kh = 104, 488
+    tf, pf, uf = font("InterDisplay-Bold.otf", 30), font("InterDisplay-Bold.otf", 26), font("Inter-Medium.otf", 20)
+    for i, (naam, prijs, t, punten, lint) in enumerate(plannen):
+        x = x0 + i * (kw + gap)
+        kleur = TYPES[t][0]
+        hoofd = i == 1
+        d.rounded_rectangle([x + 6, y0 + 10, x + kw + 6, y0 + kh + 10], radius=24, fill=(0, 0, 0, 36))
+        d.rounded_rectangle([x, y0, x + kw, y0 + kh], radius=24, fill=(255, 214, 92) if hoofd else (255, 255, 255), outline=kleur, width=3)
+        d.rounded_rectangle([x + 10, y0 + 10, x + kw - 10, y0 + kh - 10], radius=18, fill=(255, 255, 255))
+        d.rounded_rectangle([x + 10, y0 + 10, x + kw - 10, y0 + 150], radius=18, fill=licht(kleur, 0.8))
+        badge(d, x + kw / 2, y0 + 68, 40, t)
+        d.text((x + kw / 2, y0 + 130), naam, font=tf, fill=INKT, anchor="mm")
+        for j, punt in enumerate(punten):
+            y = y0 + 190 + j * 56
+            vink(d, x + 30, y + 12, donker(kleur, 0.2))
+            d.text((x + 62, y + 12), punt, font=uf, fill=INKT, anchor="lm")
+        d.line([(x + 30, y0 + kh - 92), (x + kw - 30, y0 + kh - 92)], fill=(228, 228, 236), width=2)
+        d.text((x + kw / 2, y0 + kh - 50), prijs, font=pf, fill=donker(kleur, 0.35), anchor="mm")
+        if lint:
+            f = font("Inter-Bold.otf", 15)
+            w = int(d.textlength(lint, font=f)) + 28
+            d.rounded_rectangle([x + kw / 2 - w / 2, y0 - 16, x + kw / 2 + w / 2, y0 + 14], radius=15, fill=INKT)
+            d.text((x + kw / 2, y0 - 1), lint, font=f, fill=(255, 255, 255), anchor="mm")
+    return opslaan(img, "store-vergelijking")
+
+
+def alertvoorbeeld() -> Path:
+    """Zo ziet een Sniper-alert eruit: product, winkel, prijs, limiet en de knoppen."""
+    hoog = 560
+    img = achtergrond(hoog, "elektrisch")
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, "ZO ZIET EEN SNIPER-ALERT ERUIT", TYPES["elektrisch"][0], "elektrisch")
+    groen = (46, 204, 113)
+    ax, ay, aw, ah = 48, 100, 1104, 410
+    d.rounded_rectangle([ax + 6, ay + 10, ax + aw + 6, ay + ah + 10], radius=20, fill=(0, 0, 0, 36))
+    d.rounded_rectangle([ax, ay, ax + aw, ay + ah], radius=20, fill=(47, 49, 54))
+    d.rounded_rectangle([ax, ay, ax + 10, ay + ah], radius=5, fill=groen)
+    wit, zacht = (242, 243, 245), (185, 187, 190)
+    d.text((ax + 40, ay + 36), "PokeTCG Haven • Haven Sniper", font=font("Inter-SemiBold.otf", 18), fill=zacht, anchor="lm")
+    d.text((ax + 40, ay + 80), "Op voorraad: Elite Trainer Box", font=font("InterDisplay-Bold.otf", 32), fill=wit, anchor="lm")
+    rijen = [("Winkel", "Voorbeeldwinkel (online)"), ("Prijs", "€ 59,99"), ("Limiet", "2 per persoon"), ("Gezien", "zojuist")]
+    lf, vf = font("Inter-Bold.otf", 18), font("Inter-Medium.otf", 22)
+    for i, (k, v) in enumerate(rijen):
+        x = ax + 40 + (i % 2) * 330
+        y = ay + 130 + (i // 2) * 80
+        d.text((x, y), k, font=lf, fill=zacht)
+        d.text((x, y + 28), v, font=vf, fill=wit)
+    knoppen = [("Naar Voorbeeldwinkel", (78, 80, 88)), ("Gescoord!", (36, 128, 70))]
+    x = ax + 40
+    for tekst, kleur in knoppen:
+        f = font("Inter-SemiBold.otf", 20)
+        w = int(d.textlength(tekst, font=f)) + 48
+        d.rounded_rectangle([x, ay + ah - 84, x + w, ay + ah - 36], radius=8, fill=kleur)
+        d.text((x + w / 2, ay + ah - 60), tekst, font=f, fill=(255, 255, 255), anchor="mm")
+        x += w + 14
+    b = booster(TYPES["elektrisch"][0], "elektrisch")
+    b = b.resize((int(b.width * 0.95), int(b.height * 0.95)))
+    img.paste(b, (ax + aw - b.width - 50, ay + 50), b)
+    return opslaan(img, "alert-voorbeeld")
+
+
+def founderpas() -> Path:
+    """De Founder-pas als holo-kaart: 1 van 100."""
+    hoog = 520
+    img = achtergrond(hoog, "draak")
+    d = ImageDraw.Draw(img, "RGBA")
+    goud = (255, 200, 60)
+    pil(d, 48, 36, "FOUNDER-PAS  ·  MAXIMAAL 100", TYPES["draak"][0], "draak")
+    kx, ky, kw, kh = 70, 104, 560, 360
+    d.rounded_rectangle([kx + 8, ky + 12, kx + kw + 8, ky + kh + 12], radius=28, fill=(0, 0, 0, 40))
+    d.rounded_rectangle([kx, ky, kx + kw, ky + kh], radius=28, fill=goud)
+    d.rounded_rectangle([kx + 14, ky + 14, kx + kw - 14, ky + kh - 14], radius=20, fill=meng(TYPES["draak"][0], (255, 255, 255), 0.15))
+    glans = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glans)
+    for i in range(5):
+        x = kx + 40 + i * 120
+        gd.polygon([(x, ky + kh - 14), (x + 120, ky + 14), (x + 160, ky + 14), (x + 40, ky + kh - 14)], fill=(255, 255, 255, 30))
+    img.paste(glans, (0, 0), glans)
+    d = ImageDraw.Draw(img, "RGBA")
+    d.text((kx + 44, ky + 66), "FOUNDER", font=font("InterDisplay-Bold.otf", 54), fill=(255, 255, 255), anchor="lm")
+    d.text((kx + 44, ky + 116), "PokeTCG Haven  ·  seizoen 1", font=font("Inter-SemiBold.otf", 22), fill=licht(TYPES["draak"][0], 0.7), anchor="lm")
+    badge(d, kx + kw - 96, ky + 92, 56, "draak")
+    d.rounded_rectangle([kx + 44, ky + kh - 104, kx + 250, ky + kh - 54], radius=25, fill=(255, 255, 255))
+    d.text((kx + 147, ky + kh - 79), "Nr. 001 / 100", font=font("Inter-Bold.otf", 22), fill=INKT, anchor="mm")
+    ster(d, kx + kw - 70, ky + kh - 70, 26, goud, 0.42, 5)
+    punten = ["Een jaar Haven Sniper", "Haven Elite zodra die live is", "Vaste Founder-badge", "Blijvende korting"]
+    tf = font("InterDisplay-Bold.otf", 26)
+    for i, punt in enumerate(punten):
+        y = 150 + i * 72
+        vink(d, 690, y + 4, donker(TYPES["draak"][0], 0.1))
+        d.text((726, y + 4), punt, font=tf, fill=INKT, anchor="lm")
+    d.text((690, 150 + 4 * 72), "€79 voor het eerste jaar", font=font("Inter-Bold.otf", 22), fill=donker(TYPES["draak"][0], 0.3), anchor="lm")
+    return opslaan(img, "founder-pas")
+
+
 def main() -> None:
     paden = [
         stappenstrook(
@@ -590,6 +703,21 @@ def main() -> None:
                 ("Klik Gescoord!", "De knop onder de alert", "vuur"),
             ],
             ("In #success", "Iedereen ziet dat samen zoeken werkt"),
+        ),
+        storevergelijking(),
+        alertvoorbeeld(),
+        founderpas(),
+        tegels(
+            "tickets-overzicht", "WAARMEE KUNNEN WE JE HELPEN?", "water",
+            [
+                ("Hulp", "Een vraag over de server", "water"),
+                ("Store", "Betalen, rollen, opzeggen", "draak"),
+                ("Iets melden", "Oplichting of een overtreding", "vechten"),
+                ("Gewonnen!", "Je giveaway-prijs claimen", "fee"),
+                ("Partner", "Voor kaartwinkels", "gras"),
+            ],
+            genummerd=False,
+            per_rij=5,
         ),
     ]
     for p in paden:
