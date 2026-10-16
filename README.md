@@ -45,6 +45,8 @@ Elk kanaal begint met een banner in de huisstijl, en elke embed toont het PH-log
 
 Een banner aanpassen: wijzig de tekst in `scripts/banners.py`, draai `python -m scripts.banners` en push. De bot ziet dat het beeld veranderd is en werkt het bericht bij.
 
+De infographics in de Start-kanalen (eerste stappen, routekaart, huisregels, veilig handelen, trainerskaart, weekritme) komen uit `scripts/infographics.py`: `python -m scripts.infographics`.
+
 ## Hernoemen en opruimen
 
 Onder `hernoemen` in `config/server.yaml` staan oude namen die de bot hernoemt; zo houden leden hun rol en blijven berichten staan. Onder `verwijderen` staat wat de bot opruimt. **De bot verwijdert nooit iets wat daar niet staat**, en de config weigert iets te verwijderen wat ook in het plan staat.
@@ -82,7 +84,7 @@ Onder `hernoemen` in `config/server.yaml` staan oude namen die de bot hernoemt; 
 | --- | --- |
 | `config/server.yaml` | Rollen, kanalen (met stapnummer), rechten en AutoMod |
 | `inhoud/` | Een bestand per kanaal met embeds, knoppen en menu's, plus de tour, de Store-teksten en de vragen van de week |
-| `inhoud/afbeeldingen/` | De banners en het logo (gemaakt met `python -m scripts.banners`); Discord laadt ze via GitHub |
+| `inhoud/afbeeldingen/` | De banners, infographics en het logo (gemaakt met `scripts/banners.py` en `scripts/infographics.py`); Discord laadt ze via GitHub |
 | `haven/` | Logica zonder Discord-verbinding: config, inhoud, huisstijl, levels, giveaways, mijlpalen en alerts |
 | `bot/` | De Haven-bot: kern, database (SQLite) en een cog per onderdeel |
 | `scripts/setup_server.py` | De inrichting (wordt door de bot gebruikt; kan ook los draaien) |

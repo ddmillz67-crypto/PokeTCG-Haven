@@ -7,6 +7,7 @@ from bot.db import Database
 from bot.kern import COGS, HavenBot
 from haven.config import laad_config
 from haven.inhoud import (
+    AFBEELDINGEN,
     ACTIES,
     PREFIX,
     Context,
@@ -132,9 +133,12 @@ def test_onbekende_actie_wordt_geweigerd(config, inhoud):
 def test_tour_en_store_teksten_kloppen(config):
     tour = laad_yaml("tour.yaml")
     namen = {k.naam for k in config.kanalen}
-    assert len(tour["paginas"]) == 7
-    for p in tour["paginas"]:
+    assert len(tour["paginas"]) == 8, "een openingsscherm met de routekaart en 7 haltes"
+    assert "kanaal" not in tour["paginas"][0]
+    for p in tour["paginas"][1:]:
         assert p["kanaal"] in namen
+    for p in [*tour["paginas"], tour["afsluiting"]]:
+        assert (AFBEELDINGEN / f"{p['beeld']}.png").exists(), p["titel"]
     store = laad_yaml("store.yaml")
     assert {"sniper", "founder", "elite", "partner"} <= set(store["info"])
 
@@ -155,3 +159,23 @@ def test_bot_laadt_en_elke_knop_heeft_een_handler(config, inhoud, tmp_path):
     assert ontbreekt == []
     assert {"tour", "level", "vouch", "meld", "alert", "giveaway", "invite", "release", "pings", "opgelost"} <= commandos
     assert planners == {"radar", "restock", "rol_weg"}
+
+
+def test_trainerskaart_toont_alle_keuzes(config, inhoud, tmp_path):
+    from types import SimpleNamespace
+
+    async def start():
+        bot = HavenBot(config, inhoud, 123, Database(tmp_path / "t.db"))
+        async with bot:
+            await bot.load_extension("bot.cogs.rollen")
+            cog = bot.get_cog("Rollen")
+            lid = SimpleNamespace(display_avatar=SimpleNamespace(url="https://cdn.discordapp.com/embed/avatars/0.png"))
+            e = cog.trainerskaart(lid, {"Sealed", "Japans", "Vlaanderen", "Lid"})
+            await bot.remove_cog("Rollen")
+            return e
+
+    e = asyncio.run(start())
+    velden = {v.name: v.value for v in e.fields}
+    assert "Sealed" in velden["🃏  Verzamelt"] and "Japans" in velden["🃏  Verzamelt"]
+    assert velden["📍  Regio"] == "Vlaanderen"
+    assert velden["🔔  Meldingen"] == "*nog niets gekozen*"

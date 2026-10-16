@@ -1,29 +1,40 @@
 # De persoonlijke tour (alleen zichtbaar voor het lid). Elke pagina heeft een knop naar het kanaal.
 paginas:
+  - titel: "🗺️  Welkom op route 1, trainer!"
+    tekst: "In een paar schermen laten we je **de belangrijkste plekken** van de Haven zien.\n\nOnderweg kun je steeds **direct naar het kanaal** springen. Aan het eind wacht je **eerste badge**. 🏅"
+    beeld: tour-kaart
   - titel: "🎛️  Kies je rollen"
     tekst: "Vertel **wat je verzamelt**, **waar je woont** en **welke meldingen** je wilt.\n\nDan krijg je alleen wat jij interessant vindt."
     kanaal: rollen
+    beeld: rollen-kaart
   - titel: "👋  Stel je voor"
     tekst: "Vertel **wie je bent** en **wat je verzamelt**.\n\nBinnen **24 uur** zegt een Haven Helper hallo."
     kanaal: voorstellen
+    beeld: voorstellen
   - titel: "📸  Deel je pulls"
     tekst: "**Elke pull telt!** Geef de mooiste een ⭐.\n\nElke **vrijdag** kiezen we de **Pull van de Week**."
     kanaal: pulls
+    beeld: pulls
   - titel: "📒  Laat je collectie zien"
     tekst: "Maak **één post** voor je binder, sealed of graded kaarten.\n\nElke **maandag** is het **Binder Monday**."
     kanaal: collecties
+    beeld: collecties
   - titel: "📅  Releases en restocks"
     tekst: "De **releasekalender**, gratis **restock-alerts** en de **winkel-radar**, waar leden voorraad in winkels melden."
     kanaal: release-kalender
+    beeld: releases
   - titel: "🔁  Veilig ruilen"
     tekst: "Kopen, verkopen en ruilen doe je in de markt, vanaf **level 5**.\n\nCheck altijd de **vouches** van je handelspartner."
     kanaal: ruilen-verkopen
+    beeld: markt
   - titel: "🎁  Giveaways en events"
     tekst: "Bij elke **mijlpaal** geven we iets weg, en elke **zondag om 20:00** openen we samen packs. Meedoen is **altijd gratis**.\n\n> Wil je ooit sneller zijn bij restocks? Kijk dan eens in de Store. Geen verplichting: de community blijft gratis."
     kanaal: giveaways
+    beeld: giveaways
 
 afsluiting:
   titel: "🎉  Je eerste badge is binnen!"
+  beeld: start-stappen
   tekst: "Je hebt de rol **Wegwijs** gekregen: je eerste badge als trainer in de Haven.\n\nKom je voorstellen in de community, we zijn benieuwd naar je!\n\n> Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen uitnodigingslink."
 
 kwijt:

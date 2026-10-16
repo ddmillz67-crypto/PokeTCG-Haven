@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot.kern import HavenBot, antwoord
-from haven.inhoud import PREFIX, laad_yaml
+from haven.inhoud import PREFIX, afbeelding_url, laad_yaml
 
 
 class Tour(commands.Cog):
@@ -22,14 +22,16 @@ class Tour(commands.Cog):
     def scherm(self, nummer: int, lid: discord.Member) -> tuple[discord.Embed, discord.ui.View]:
         paginas = self.data["paginas"]
         p = paginas[nummer]
-        kanaal = p["kanaal"]
+        kanaal = p.get("kanaal")
         embed = self.bot.embed("merk", p["titel"], p["tekst"])
+        if p.get("beeld"):
+            embed.set_image(url=afbeelding_url(p["beeld"]))
         embed.set_footer(text=f"Stap {nummer + 1} van {len(paginas)}  ·  PokeTCG Haven")
         view = discord.ui.View(timeout=None)
         if nummer > 0:
             view.add_item(discord.ui.Button(label="Vorige", emoji="⬅️", custom_id=f"{PREFIX}tour:pagina:{nummer - 1}"))
         ctx = self.bot.context()
-        if kanaal in ctx.kanalen:
+        if kanaal and kanaal in ctx.kanalen:
             view.add_item(discord.ui.Button(label=f"Ga naar #{kanaal}", url=f"https://discord.com/channels/{ctx.guild_id}/{ctx.kanalen[kanaal]}"))
         if nummer + 1 < len(paginas):
             view.add_item(discord.ui.Button(label="Volgende", emoji="➡️", style=discord.ButtonStyle.primary, custom_id=f"{PREFIX}tour:pagina:{nummer + 1}"))
@@ -49,7 +51,15 @@ class Tour(commands.Cog):
     async def klaar(self, interaction: discord.Interaction, _: str) -> None:
         lid = interaction.user
         a = self.data["afsluiting"]
-        await interaction.response.edit_message(embed=self.bot.embed("community", a["titel"], a["tekst"]), view=None)
+        slot = self.bot.embed("community", a["titel"], a["tekst"])
+        if a.get("beeld"):
+            slot.set_image(url=afbeelding_url(a["beeld"]))
+        view = discord.ui.View(timeout=None)
+        for label, kanaal, emoji in (("Stel je voor", "voorstellen", "👋"), ("Kies je rollen", "rollen", "🎛️")):
+            knop = self.bot.kanaal_knop(label, kanaal, emoji)
+            if knop:
+                view.add_item(knop)
+        await interaction.response.edit_message(embed=slot, view=view if view.children else None)
         rol = self.bot.rol("Wegwijs")
         if rol and rol not in lid.roles:
             await lid.add_roles(rol, reason="Server-tour afgerond")

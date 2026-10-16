@@ -1,4 +1,4 @@
-"""Taalkeuze, nieuwe leden en de knop 'Ik heb een vraag' bij de regels."""
+"""Kom binnen, nieuwe leden en de knop 'Ik heb een vraag' bij de regels."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 
 from bot.kern import HavenBot, antwoord
+from haven.inhoud import PREFIX
 from haven.levels import ALLE_LEVELROLLEN, LEVEL_ROLLEN
 
 LIDROL = "Lid"
@@ -38,11 +39,25 @@ class Start(commands.Cog):
         await self.zorg_voor_levelrol(lid)
         e = self.bot.embed(
             "community",
-            "🧡  Je bent er al!" if al_binnen else "🧡  Welkom binnen!",
-            "Je hebt nu toegang tot de hele community.\n\n"
-            "**Volgende stap:** lees de huisregels in {#regels} en volg daarna de tour in {#server-tour}.",
+            "🧡  Je bent er al, trainer!" if al_binnen else "🧡  Welkom binnen, trainer!",
+            "Je hebt nu toegang tot de **hele community**.\n\n"
+            "**Jouw volgende stappen**\n"
+            "**1.**  Lees de huisregels in {#regels}\n"
+            "**2.**  Volg de tour en verdien je eerste badge\n"
+            "**3.**  Kies je rollen in {#rollen}",
         )
-        await antwoord(interaction, embed=e)
+        await antwoord(interaction, embed=e, view=self.volgende_stappen())
+
+    def volgende_stappen(self) -> discord.ui.View:
+        view = discord.ui.View(timeout=None)
+        regels = self.bot.kanaal_knop("Huisregels", "regels", "📜")
+        if regels:
+            view.add_item(regels)
+        view.add_item(discord.ui.Button(label="Start de tour", emoji="🧭", style=discord.ButtonStyle.success, custom_id=f"{PREFIX}tour:start"))
+        rollen = self.bot.kanaal_knop("Kies je rollen", "rollen", "🎛️")
+        if rollen:
+            view.add_item(rollen)
+        return view
 
     async def vraag(self, interaction: discord.Interaction, _: str) -> None:
         tickets = self.bot.get_cog("Tickets")

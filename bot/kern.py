@@ -90,6 +90,13 @@ class HavenBot(commands.Bot):
             rollen={r.name: r.id for r in g.roles} if g else {},
         )
 
+    def kanaal_knop(self, label: str, kanaal: str, emoji: str | None = None) -> discord.ui.Button | None:
+        """Een knop die direct naar een kanaal springt (None als het kanaal nog niet bestaat)."""
+        ctx = self.context()
+        if kanaal not in ctx.kanalen:
+            return None
+        return discord.ui.Button(label=label, emoji=emoji, url=f"https://discord.com/channels/{ctx.guild_id}/{ctx.kanalen[kanaal]}")
+
     def tekst(self, tekst: str) -> str:
         return vul_in(tekst, self.context())
 

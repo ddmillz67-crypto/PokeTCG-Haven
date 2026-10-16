@@ -44,6 +44,9 @@ berichten:
 
           **Stap 3  ·  Volg de tour**
           In een paar klikken weet je precies hoe alles werkt.
+
+          Rond je de tour af? Dan krijg je je eerste badge: **Wegwijs** 🏅
+        afbeelding: "{afbeelding:start-stappen}"
     knoppen:
       - { label: "Kom binnen", emoji: "🚪", actie: "binnen", stijl: groen }
       - { label: "Lees de huisregels", emoji: "📜", kanaal: regels }

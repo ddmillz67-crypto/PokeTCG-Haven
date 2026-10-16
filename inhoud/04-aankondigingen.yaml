@@ -12,6 +12,7 @@ berichten:
           Alleen het team post hier, zodat je **niets mist**.
         velden:
           - naam: "🗓️  Ons weekritme"
-            waarde: "**Maandag** · Binder Monday in {#collecties}\n**Woensdag** · Vraag van de week in {#chat}\n**Vrijdag** · Pull van de Week in {#pulls}\n**Zondag 20:00** · Pack-avond op de stage\n**Releasedag** · Releasedraad en watch-party\n​"
+            waarde: "**Maandag** · Binder Monday in {#collecties}\n**Woensdag 19:00** · Vraag van de week in {#chat}\n**Vrijdag 18:00** · Pull van de Week in {#pulls}\n**Zondag 20:00** · Pack-avond op de stage\n**Releasedag** · Releasedraad en watch-party\n​"
           - naam: "🔔  Meldingen"
             waarde: "We pingen **nooit iedereen**. Kies zelf welke meldingen je wilt in {#rollen}."
+        afbeelding: "{afbeelding:weekritme}"

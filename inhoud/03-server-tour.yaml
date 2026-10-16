@@ -23,6 +23,7 @@ berichten:
           **8.**  Doe mee in {#giveaways} en op de pack-avond
 
           > Je kunt de tour altijd opnieuw starten met `/tour`.
+        afbeelding: "{afbeelding:tour-kaart}"
     knoppen:
       - { label: "Start mijn tour", emoji: "🧭", actie: "tour:start", stijl: groen }
       - { label: "Ik ben de weg kwijt", emoji: "🗺️", actie: "tour:kwijt" }

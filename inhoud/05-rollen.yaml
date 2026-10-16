@@ -11,6 +11,9 @@ berichten:
 
           Je kunt het altijd aanpassen. Haal een vinkje weg en de rol verdwijnt.
 
+          Na elke keuze laat de bot je **jouw trainerskaart** zien, zodat je precies weet wat je hebt gekozen.
+        afbeelding: "{afbeelding:rollen-kaart}"
+
   - sleutel: interesses
     embeds:
       - soort: community

@@ -34,6 +34,7 @@ berichten:
             waarde: "Deel geen adressen, telefoonnummers of screenshots van privéberichten.\n> *Waarom: je weet nooit wie er meeleest.*\n​"
           - naam: "8  ·  Volg de regels van Discord"
             waarde: "Je bent minimaal **13 jaar**. Handelen met geld kan vanaf **16 jaar**, of jonger met toestemming van een ouder. Kaart tegen kaart ruilen mag iedereen.\n> *Waarom: zo beschermen we jongere leden.*"
+        afbeelding: "{afbeelding:regels-overzicht}"
         footer: "PokeTCG Haven is niet verbonden aan The Pokémon Company, Nintendo of Game Freak."
 
   - sleutel: veilig-handelen
@@ -48,6 +49,7 @@ berichten:
           **3.**  Betaal een onbekende **nooit** zonder kopersbescherming.
 
           **4.**  Deal rond? Geef elkaar een vouch met `/vouch`.
+        afbeelding: "{afbeelding:veilig-handelen}"
 
   - sleutel: als-er-iets-misgaat
     embeds:
