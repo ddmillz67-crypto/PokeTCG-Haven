@@ -5,15 +5,15 @@ berichten:
       - banner: welkom
         soort: community
       - soort: community
-        titel: "Welkom in PokeTCG Haven 🧡"
+        titel: "Welkom, trainer! 🧡"
         beschrijving: |
-          **Fijn dat je er bent!**
+          **Fijn dat je er bent!** Je bent beland in **PokeTCG Haven**.
 
-          PokeTCG Haven is dé plek voor Pokémon TCG-verzamelaars uit **Nederland en België**.
+          Dé plek voor Pokémon TCG-trainers en -verzamelaars uit **Nederland en België**.
 
           Hier deel je je mooiste **pulls**, ruil je **veilig** met andere verzamelaars en mis je **nooit meer een release**.
 
-          > Of je nu net je eerste booster opent of al twintig jaar verzamelt: **je hoort erbij.**
+          > Of je nu net je eerste booster opent of al twintig jaar verzamelt: **elke trainer hoort erbij.**
 
   - sleutel: wat-vind-je-hier
     embeds:
@@ -34,7 +34,7 @@ berichten:
   - sleutel: kom-binnen
     embeds:
       - soort: community
-        titel: "Zo kom je binnen"
+        titel: "Jouw eerste stappen, trainer"
         beschrijving: |
           **Stap 1  ·  Klik op Kom binnen**
           Je krijgt direct toegang tot de hele community.

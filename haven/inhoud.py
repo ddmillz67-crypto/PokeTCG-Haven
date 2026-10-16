@@ -160,9 +160,11 @@ def laad_yaml(naam: str, map_: Path = INHOUD_MAP) -> dict:
 def afbeelding_url(naam: str, env: dict | None = None) -> str:
     """URL van een beeld, met een versie erachter zodat Discord een nieuw beeld ook echt ophaalt."""
     basis = (env or os.environ).get("AFBEELDINGEN_URL") or STANDAARD_AFBEELDINGEN_URL
-    pad = AFBEELDINGEN / f"{naam}.png"
+    # Een eigen beeld in inhoud/afbeeldingen/eigen/ gaat voor op de gegenereerde banner.
+    relatief = f"eigen/{naam}.png" if (AFBEELDINGEN / "eigen" / f"{naam}.png").exists() else f"{naam}.png"
+    pad = AFBEELDINGEN / relatief
     versie = hashlib.sha1(pad.read_bytes()).hexdigest()[:8] if pad.exists() else "0"
-    return f"{basis.rstrip('/')}/{naam}.png?v={versie}"
+    return f"{basis.rstrip('/')}/{relatief}?v={versie}"
 
 
 def _teksten(bericht: Bericht) -> list[str]:

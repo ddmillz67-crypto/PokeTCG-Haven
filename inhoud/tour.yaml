@@ -23,8 +23,8 @@ paginas:
     kanaal: giveaways
 
 afsluiting:
-  titel: "🎉  Je bent helemaal wegwijs!"
-  tekst: "Je hebt de rol **Wegwijs** gekregen.\n\nKom je voorstellen in de community, we zijn benieuwd naar je!\n\n> Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen uitnodigingslink."
+  titel: "🎉  Je eerste badge is binnen!"
+  tekst: "Je hebt de rol **Wegwijs** gekregen: je eerste badge als trainer in de Haven.\n\nKom je voorstellen in de community, we zijn benieuwd naar je!\n\n> Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen uitnodigingslink."
 
 kwijt:
   titel: "🗺️  Waar vind ik wat?"
