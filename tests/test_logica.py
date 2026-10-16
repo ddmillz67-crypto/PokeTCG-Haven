@@ -97,3 +97,18 @@ def test_vorige_maand_voor_de_hall_of_fame():
     assert sleutel == "2026-12" and naam == "december 2026"
     assert dt.datetime.fromtimestamp(begin, tz) == dt.datetime(2026, 12, 1, tzinfo=tz)
     assert dt.datetime.fromtimestamp(eind, tz) == dt.datetime(2027, 1, 1, tzinfo=tz)
+
+
+def test_releaseoverzicht_toont_alleen_komende_releases():
+    from bot.cogs.releases import overzicht_regels
+
+    nu = 1_800_000_000
+    rijen = [
+        {"naam": "Oude set", "tijd": nu - 3 * 86400, "met_tijd": 0, "limiet": None, "bericht_url": ""},
+        {"naam": "Gisteren", "tijd": nu - 3600, "met_tijd": 1, "limiet": "2", "bericht_url": "https://discord.com/x"},
+        {"naam": "Nieuwe set", "tijd": nu + 86400, "met_tijd": 0, "limiet": None, "bericht_url": ""},
+    ]
+    regels = overzicht_regels(rijen, nu)
+    assert len(regels) == 2
+    assert regels[0].startswith("**[Gisteren](https://discord.com/x)**") and "limiet 2" in regels[0]
+    assert regels[1].startswith("**Nieuwe set**")

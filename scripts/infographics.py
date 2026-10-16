@@ -468,6 +468,44 @@ def advertentie() -> Path:
 
 
 
+def alerttijdlijn() -> Path:
+    """Gratis en Sniper naast elkaar op een tijdlijn van 0 tot 10 minuten."""
+    hoog = 470
+    img = achtergrond(hoog, "gras")
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, "WANNEER ZIE JIJ EEN RESTOCK?", TYPES["gras"][0], "gras")
+    x0, x1 = 490, 1110
+    as_y = 360
+    d.line([(x0, as_y), (x1, as_y)], fill=GRIJS, width=3)
+    lf = font("Inter-SemiBold.otf", 18)
+    for m in range(0, 11, 2):
+        x = x0 + (x1 - x0) * m / 10
+        d.line([(x, as_y - 8), (x, as_y + 8)], fill=GRIJS, width=3)
+        d.text((x, as_y + 28), f"{m} min", font=lf, fill=GRIJS, anchor="mm")
+    tf, uf = font("InterDisplay-Bold.otf", 28), font("Inter-Medium.otf", 19)
+    banen = [
+        (150, "Haven Sniper", "Direct, met persoonlijke pings", "elektrisch", 0),
+        (262, "Gratis", "In #restocks, iets later", "gras", 10),
+    ]
+    for y, naam, uitleg, t, minuut in banen:
+        kleur = TYPES[t][0]
+        badge(d, 104, y, 40, t)
+        d.text((160, y - 18), naam, font=tf, fill=INKT)
+        d.text((160, y + 18), uitleg, font=uf, fill=GRIJS)
+        d.line([(x0, y), (x1, y)], fill=(220, 222, 232), width=2)
+        x = x0 + (x1 - x0) * minuut / 10
+        if minuut:
+            for xx in range(x0, int(x) - 30, 22):
+                d.rectangle([xx, y - 4, xx + 10, y + 4], fill=licht(kleur, 0.5))
+        d.ellipse([x - 26, y - 26, x + 26, y + 26], fill=kleur, outline=donker(kleur, 0.3), width=4)
+        ster(d, x, y, 16, (255, 255, 255), 0.42, 5)
+    # de voorsprong
+    xa, xb = x0, x1
+    d.rounded_rectangle([(xa + xb) / 2 - 130, 190, (xa + xb) / 2 + 130, 224], radius=17, fill=TYPES["elektrisch"][0])
+    d.text(((xa + xb) / 2, 207), "10 minuten voorsprong", font=font("Inter-Bold.otf", 18), fill=INKT, anchor="mm")
+    return opslaan(img, "restocks-tijdlijn")
+
+
 def main() -> None:
     paden = [
         stappenstrook(
@@ -533,6 +571,25 @@ def main() -> None:
                 ("Sniper direct", "Haven Sniper-leden zien het meteen", "elektrisch"),
             ],
             ("Na 10 minuten", "Iedereen, met een ping voor jouw regio"),
+        ),
+        stappenstrook(
+            "releasedag", "ZO GAAT EEN RELEASE IN DE HAVEN", "draak",
+            [
+                ("Aankondiging", "Datum, winkels en limiet, met een ping", "draak"),
+                ("Releasedraad", "Tips: wie pakt vroeg uit en hoe lang is de rij", "water"),
+                ("Releasedag", "Op jacht in de winkels en online", "vuur"),
+            ],
+            ("Releaseavond", "20:00 samen uitpakken op de stage"),
+        ),
+        alerttijdlijn(),
+        stappenstrook(
+            "gescoord-flow", "ZO KOM JE IN #SUCCESS", "draak",
+            [
+                ("Een alert", "Uit #restocks of de winkel-radar", "gras"),
+                ("Gekocht!", "Je hebt hem te pakken", "elektrisch"),
+                ("Klik Gescoord!", "De knop onder de alert", "vuur"),
+            ],
+            ("In #success", "Iedereen ziet dat samen zoeken werkt"),
         ),
     ]
     for p in paden:

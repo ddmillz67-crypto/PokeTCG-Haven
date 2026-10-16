@@ -15,5 +15,6 @@ berichten:
             waarde: "Sommige winkellinks zijn **affiliate-links**. Koop je via zo'n link, dan krijgen wij een kleine vergoeding van de winkel.\nJij betaalt **niets extra**, en het helpt de giveaways te betalen. Zulke links zijn altijd gelabeld.\n​"
           - naam: "⚡  Sneller?"
             waarde: "Met **Haven Sniper** krijg je elke alert **direct**, plus persoonlijke meldingen."
+        afbeelding: "{afbeelding:restocks-tijdlijn}"
     knoppen:
       - { label: "Bekijk Haven Sniper", emoji: "⚡", kanaal: store }

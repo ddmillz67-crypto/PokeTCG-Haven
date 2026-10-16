@@ -12,6 +12,9 @@ berichten:
           Kies **Releases** in {#rollen} om een melding te krijgen.
         velden:
           - naam: "🎉  Op de releasedag"
-            waarde: "Een **releasedraad** met tips: welke winkels vroeg uitpakken en hoe laat de rij begint.\n's Avonds is er een **watch-party** op de stage.\n​"
+            waarde: "Onder elke release opent een **releasedraad** met tips: welke winkels vroeg uitpakken en hoe lang de rij is.\nOm **20:00** is de **releaseavond** op de stage: samen uitpakken en pulls delen.\n​"
+          - naam: "🗓️  Overzicht"
+            waarde: "Onderaan dit kanaal staat altijd een **overzicht van de komende releases**, automatisch bijgewerkt.\n​"
           - naam: "❓  Mis je een release?"
             waarde: "Laat het weten via een ticket in {#tickets}."
+        afbeelding: "{afbeelding:releasedag}"
