@@ -212,3 +212,17 @@ def test_kanaalkaart_heeft_vier_vaste_vragen():
     assert [f.name for f in e.fields] == ["Wat mag hier?", "Zo ziet een goed voorbeeld eruit", "Hulp nodig?"]
     with pytest.raises(ValueError):
         kanaalkaart("x", "y", "z" * 1025, "v")
+
+
+def test_setup_standaard_veilig_dry_run(monkeypatch):
+    from scripts.setup_server import env_dry_run, env_stap
+
+    monkeypatch.delenv("SETUP_DRY_RUN", raising=False)
+    monkeypatch.delenv("SETUP_TOT_STAP", raising=False)
+    assert env_dry_run() is True and env_stap() == 0
+    monkeypatch.setenv("SETUP_DRY_RUN", "0")
+    monkeypatch.setenv("SETUP_TOT_STAP", "9")
+    assert env_dry_run() is False and env_stap() == 9
+    monkeypatch.setenv("SETUP_TOT_STAP", "negen")
+    with pytest.raises(SystemExit):
+        env_stap()

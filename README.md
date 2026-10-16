@@ -52,6 +52,19 @@ python -m scripts.setup_server --tot-stap 0
 2. Geef jezelf de rol **Admin**.
 3. Zet bij stap 2 **Community** aan (Serverinstellingen > Community). Draai het script daarna opnieuw, zodat `#aankondigingen` een aankondigingskanaal wordt en Releaseavond een stage.
 
+## Draaien op Railway
+
+`railway.json` laat Railway het setup-script één keer draaien en daarna stoppen (geen herstart). Zet in Railway onder **Variables**:
+
+| Variabele | Waarde |
+| --- | --- |
+| `DISCORD_TOKEN` | het bot-token |
+| `DISCORD_GUILD_ID` | de server-ID |
+| `SETUP_TOT_STAP` | het stapnummer, bijvoorbeeld `0` |
+| `SETUP_DRY_RUN` | `1` = alleen laten zien wat er zou veranderen (standaard), `0` = echt uitvoeren |
+
+Na het opslaan van de variabelen start Railway een nieuwe deploy. De uitkomst staat onder **Deploy Logs**. Begin altijd met `SETUP_DRY_RUN=1`, controleer de logs, en zet het daarna op `0`.
+
 ## Testen
 
 ```bash

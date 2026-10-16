@@ -62,6 +62,18 @@ def laad_env(pad: Path) -> None:
         os.environ.setdefault(sleutel.strip(), waarde.strip().strip('"').strip("'"))
 
 
+def env_stap() -> int:
+    waarde = os.environ.get("SETUP_TOT_STAP", "0").strip()
+    if not waarde.isdigit():
+        raise SystemExit(f"SETUP_TOT_STAP moet een getal zijn, niet '{waarde}'")
+    return int(waarde)
+
+
+def env_dry_run() -> bool:
+    """Standaard veilig: zonder SETUP_DRY_RUN=0 wordt er niets veranderd."""
+    return os.environ.get("SETUP_DRY_RUN", "1").strip().lower() not in {"0", "nee", "false", "no"}
+
+
 class Inrichter:
     def __init__(self, guild: discord.Guild, config: ServerConfig, tot_stap: int, dry_run: bool):
         self.guild = guild
@@ -415,12 +427,15 @@ class Inrichter:
 
 async def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Richt de PokeTCG Haven-server in.")
-    parser.add_argument("--tot-stap", type=int, default=0, help="maak alles t/m dit stapnummer (0-24)")
-    parser.add_argument("--dry-run", action="store_true", help="laat alleen zien wat er zou veranderen")
+    # Standaardwaarden komen uit de omgeving, zodat je op Railway alleen variabelen hoeft
+    # aan te passen: SETUP_TOT_STAP=0 en SETUP_DRY_RUN=1 (1 = alleen tonen, 0 = uitvoeren).
+    parser.add_argument("--tot-stap", type=int, default=env_stap(), help="maak alles t/m dit stapnummer (0-27)")
+    parser.add_argument("--dry-run", action="store_true", default=env_dry_run(), help="laat alleen zien wat er zou veranderen")
     parser.add_argument("--config", default=str(ROOT / "config" / "server.yaml"))
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s", stream=sys.stdout)
+    log.info("setup start: tot en met stap %d%s", args.tot_stap, " (dry-run, er verandert niets)" if args.dry_run else "")
     laad_env(ROOT / ".env")
 
     try:
