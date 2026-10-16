@@ -15,6 +15,7 @@ KLEUREN = {
     "uitverkocht": 0x95A5A6,  # grijs: alert verlopen
     "premium": 0x8E44AD,      # paars: upgrade, elite
     "regels": 0xE74C3C,       # rood: regels en waarschuwingen
+    "community": 0xFF8A3D,    # warm oranje: welkom, felicitaties, Pull van de Week, kanaalkaarten
 }
 
 
@@ -45,4 +46,24 @@ def maak_embed(
     )
     embed.set_author(name=auteur)
     embed.set_footer(text=FOOTER)
+    return embed
+
+
+def kanaalkaart(
+    kanaal: str,
+    waarvoor: str,
+    wat_mag: str,
+    voorbeeld: str,
+    hulp: str = "Vraag het in #vragen-hulp of open een ticket in #tickets.",
+    *,
+    soort: str = "community",
+) -> discord.Embed:
+    """De vastgepinde kanaalkaart: vier vaste vragen, altijd in dezelfde volgorde."""
+    embed = maak_embed(soort, f"📌 Over #{kanaal}", waarvoor, tijdstempel=False)
+    embed.add_field(name="Wat mag hier?", value=wat_mag, inline=False)
+    embed.add_field(name="Zo ziet een goed voorbeeld eruit", value=voorbeeld, inline=False)
+    embed.add_field(name="Hulp nodig?", value=hulp, inline=False)
+    for veld in embed.fields:
+        if len(veld.value) > 1024:
+            raise ValueError(f"veld '{veld.name}' is langer dan de 1024 tekens die Discord toestaat")
     return embed

@@ -24,6 +24,7 @@ import aiohttp
 import discord
 
 from haven.config import (
+    TELLER_PREFIX,
     ConfigFout,
     Kanaal,
     ServerConfig,
@@ -70,6 +71,9 @@ class Inrichter:
         self.wijzigingen: list[str] = []
         self.waarschuwingen: list[str] = []
         self.rollen: dict[str, discord.Role] = {}
+        # Kanalen die deze run heeft aangemaakt. De cache van discord.py loopt soms achter,
+        # en zonder deze lijst zou een tweede ronde een kanaal dubbel kunnen aanmaken.
+        self.aangemaakt: dict[str, discord.abc.GuildChannel] = {}
 
     # -- hulpfuncties -------------------------------------------------------
 
@@ -188,17 +192,42 @@ class Inrichter:
                 result[naam] = cat
         return result
 
+    async def categorieen_ordenen(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
+        """Zet de categorieën in de volgorde van de config (STAFF onderaan)."""
+        gewenst = [n for n in self.config.categorieen if n in categorieen]
+        huidig = [c.name for c in sorted(categorieen.values(), key=lambda c: c.position)]
+        if huidig == gewenst:
+            return
+        if self.wijzig("categorieën in de juiste volgorde zetten"):
+            for positie, naam in enumerate(gewenst):
+                await categorieen[naam].edit(position=positie, reason="PokeTCG Haven setup")
+
     def zoek_kanaal(self, kanaal: Kanaal) -> discord.abc.GuildChannel | None:
+        if kanaal.naam in self.aangemaakt:
+            return self.aangemaakt[kanaal.naam]
         for ch in self.guild.channels:
             if isinstance(ch, discord.CategoryChannel):
                 continue
-            if ch.name == kanaal.naam:
+            if kanaal.type == "teller":
+                if ch.name.startswith(f"{TELLER_PREFIX}{kanaal.naam}:"):
+                    return ch
+            elif ch.name == kanaal.naam:
                 return ch
         return None
 
-    async def kanalen_inrichten(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
+    def ledental(self) -> int:
+        return self.guild.member_count or 0
+
+    async def kanalen_inrichten(self, categorieen: dict[str, discord.CategoryChannel], alleen_basis: bool = False) -> None:
+        """Maakt kanalen aan of werkt ze bij.
+
+        Met alleen_basis=True alleen de kanalen van stap 0 (en de vroege), zodat Community-modus
+        aan kan voordat er aankondigings- en stagekanalen nodig zijn.
+        """
         community = "COMMUNITY" in self.guild.features
         for kanaal in self.config.kanalen_tot_stap(self.tot_stap):
+            if alleen_basis and not (kanaal.stap == 0 or kanaal.vroeg):
+                continue
             cat = categorieen.get(kanaal.categorie)
             gewenst = self.overwrites(kanaal_rechten(self.config, kanaal))
             ch = self.zoek_kanaal(kanaal)
@@ -213,36 +242,60 @@ class Inrichter:
             vervanger = "text" if soort == "news" else "voice"
             self.waarschuw(
                 f"{kanaal.naam}: type '{soort}' vereist Community-modus; ik maak een '{vervanger}'-kanaal. "
-                "Zet Community aan en draai het script opnieuw om het om te zetten."
+                "Zet Community aan en draai het script opnieuw"
+                + (" om het om te zetten." if soort == "news" else "; verwijder dan eerst dit spraakkanaal, want een stage kan niet worden omgezet.")
             )
             soort = vervanger
-        if not self.wijzig(f"kanaal aanmaken: {kanaal.naam} ({soort}) in {kanaal.categorie}"):
+        waar = kanaal.categorie or "bovenaan, buiten een categorie"
+        if not self.wijzig(f"kanaal aanmaken: {kanaal.naam} ({soort}) in {waar}"):
             return
         gemeen = dict(category=cat, overwrites=overwrites, reason="PokeTCG Haven setup")
+        ch = None
         try:
             if soort in {"text", "news"}:
-                await self.guild.create_text_channel(
+                ch = await self.guild.create_text_channel(
                     kanaal.naam, topic=kanaal.onderwerp, slowmode_delay=kanaal.slowmode,
                     news=soort == "news", **gemeen,
                 )
             elif soort == "forum":
-                await self.guild.create_forum(
+                ch = await self.guild.create_forum(
                     kanaal.naam, topic=kanaal.onderwerp, slowmode_delay=kanaal.slowmode,
                     available_tags=[discord.ForumTag(name=t) for t in kanaal.tags], **gemeen,
                 )
             elif soort == "voice":
-                await self.guild.create_voice_channel(kanaal.naam, **gemeen)
+                ch = await self.guild.create_voice_channel(kanaal.naam, **gemeen)
+            elif soort == "teller":
+                ch = await self.guild.create_voice_channel(kanaal.discord_naam(self.ledental()), **gemeen)
             elif soort == "stage":
-                await self.guild.create_stage_channel(kanaal.naam, **gemeen)
+                ch = await self.guild.create_stage_channel(kanaal.naam, **gemeen)
         except discord.HTTPException as fout:
             self.waarschuw(f"{kanaal.naam}: aanmaken mislukt ({fout.status}: {fout.text})")
+        if ch is not None:
+            self.aangemaakt[kanaal.naam] = ch
 
     async def kanaal_bijwerken(self, kanaal: Kanaal, ch, cat, overwrites: dict) -> None:
         wijzigingen: dict = {}
         if cat is not None and ch.category_id != cat.id:
             wijzigingen["category"] = cat
+        elif kanaal.categorie is None and ch.category_id is not None:
+            wijzigingen["category"] = None
+        if kanaal.type == "teller" and ch.name != kanaal.discord_naam(self.ledental()):
+            # Discord staat maar 2 naamwijzigingen per 10 minuten per kanaal toe;
+            # de Haven-bot werkt de teller later elk kwartier bij.
+            wijzigingen["name"] = kanaal.discord_naam(self.ledental())
         if not self.zelfde_overwrites(ch.overwrites, overwrites):
             wijzigingen["overwrites"] = overwrites
+        if (
+            kanaal.type == "news"
+            and isinstance(ch, discord.TextChannel)
+            and not ch.is_news()
+            and "COMMUNITY" in self.guild.features
+        ):
+            wijzigingen["type"] = discord.ChannelType.news
+        if kanaal.type == "stage" and not isinstance(ch, discord.StageChannel) and "COMMUNITY" in self.guild.features:
+            self.waarschuw(
+                f"{kanaal.naam}: dit is nog een spraakkanaal; verwijder het en draai het script opnieuw voor een stage"
+            )
         if isinstance(ch, (discord.TextChannel, discord.ForumChannel)):
             if (ch.topic or "") != kanaal.onderwerp:
                 wijzigingen["topic"] = kanaal.onderwerp
@@ -259,6 +312,26 @@ class Inrichter:
                 await ch.edit(**wijzigingen, reason="PokeTCG Haven setup")
             except discord.HTTPException as fout:
                 self.waarschuw(f"{kanaal.naam}: bijwerken mislukt ({fout.status}: {fout.text})")
+
+    async def community_aanzetten(self) -> None:
+        s = self.config.server
+        if not s.get("community") or "COMMUNITY" in self.guild.features:
+            return
+        if not self.wijzig(f"Community-modus aanzetten (regels: #{s['regelkanaal']}, meldingen: #{s['updatekanaal']})"):
+            return
+        kanalen = await self.guild.fetch_channels()
+        regels = discord.utils.find(lambda c: isinstance(c, discord.TextChannel) and c.name == s["regelkanaal"], kanalen)
+        updates = discord.utils.find(lambda c: isinstance(c, discord.TextChannel) and c.name == s["updatekanaal"], kanalen)
+        if regels is None or updates is None:
+            self.waarschuw("Community-modus: regel- of updatekanaal niet gevonden; draai het script opnieuw")
+            return
+        try:
+            await self.guild.edit(
+                community=True, rules_channel=regels, public_updates_channel=updates,
+                reason="PokeTCG Haven setup",
+            )
+        except discord.HTTPException as fout:
+            self.waarschuw(f"Community-modus aanzetten mislukt ({fout.status}: {fout.text})")
 
     async def automod_inrichten(self) -> None:
         am = self.config.automod
@@ -333,8 +406,11 @@ class Inrichter:
         await self.server_instellingen()
         await self.rollen_inrichten()
         categorieen = await self.categorieen_inrichten()
+        await self.kanalen_inrichten(categorieen, alleen_basis=True)
+        await self.community_aanzetten()
         await self.kanalen_inrichten(categorieen)
         await self.automod_inrichten()
+        await self.categorieen_ordenen(categorieen)
 
 
 async def main(argv: list[str] | None = None) -> int:

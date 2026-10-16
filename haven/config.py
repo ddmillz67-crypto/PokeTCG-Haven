@@ -11,8 +11,10 @@ from pathlib import Path
 
 import yaml
 
-KANAALTYPES = {"text", "news", "forum", "voice", "stage"}
-MAX_STAP = 24
+KANAALTYPES = {"text", "news", "forum", "voice", "stage", "teller"}
+SPRAAKTYPES = {"voice", "stage", "teller"}
+MAX_STAP = 27
+TELLER_PREFIX = "📊 "
 HEX_KLEUR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
@@ -32,7 +34,7 @@ class Rol:
 @dataclass(frozen=True)
 class Kanaal:
     naam: str
-    categorie: str
+    categorie: str | None  # None = buiten een categorie, bovenaan
     stap: int
     zichtbaar: str | tuple[str, ...]
     type: str = "text"
@@ -41,6 +43,13 @@ class Kanaal:
     onderwerp: str = ""
     slowmode: int = 0
     tags: tuple[str, ...] = ()
+    vroeg: bool = False
+
+    def discord_naam(self, leden: int = 0) -> str:
+        """De naam zoals hij in Discord staat. Een teller toont het ledental."""
+        if self.type == "teller":
+            return f"{TELLER_PREFIX}{self.naam}: {leden:,}".replace(",", ".")
+        return self.naam
 
 
 @dataclass
@@ -54,10 +63,10 @@ class ServerConfig:
     automod: dict = field(default_factory=dict)
 
     def kanalen_tot_stap(self, stap: int) -> list[Kanaal]:
-        return [k for k in self.kanalen if k.stap <= stap]
+        return [k for k in self.kanalen if k.stap <= stap or k.vroeg]
 
     def categorieen_tot_stap(self, stap: int) -> list[str]:
-        nodig = {k.categorie for k in self.kanalen_tot_stap(stap)}
+        nodig = {k.categorie for k in self.kanalen_tot_stap(stap) if k.categorie}
         return [c for c in self.categorieen if c in nodig]
 
 
@@ -87,14 +96,17 @@ def laad_config(pad: str | Path) -> ServerConfig:
 
     categorieen: list[str] = []
     kanalen: list[Kanaal] = []
+    groepen = [(None, data.get("losse_kanalen", []))]
     for cat in data.get("categorieen", []):
         categorieen.append(cat["naam"])
-        for k in cat.get("kanalen", []):
+        groepen.append((cat["naam"], cat.get("kanalen", [])))
+    for categorie, lijst in groepen:
+        for k in lijst:
             zichtbaar = k.get("zichtbaar", "taal")
             kanalen.append(
                 Kanaal(
                     naam=k["naam"],
-                    categorie=cat["naam"],
+                    categorie=categorie,
                     stap=int(k["stap"]),
                     zichtbaar=zichtbaar if isinstance(zichtbaar, str) else tuple(zichtbaar),
                     type=k.get("type", "text"),
@@ -103,6 +115,7 @@ def laad_config(pad: str | Path) -> ServerConfig:
                     onderwerp=k.get("onderwerp", ""),
                     slowmode=int(k.get("slowmode", 0)),
                     tags=tuple(k.get("tags", ())),
+                    vroeg=bool(k.get("vroeg", False)),
                 )
             )
 
@@ -130,6 +143,18 @@ def controleer(config: ServerConfig) -> None:
     for naam in (*config.taalrollen, *config.staffrollen):
         if naam not in bekend:
             raise ConfigFout(f"rol '{naam}' wordt gebruikt maar staat niet onder rollen")
+
+    s = config.server
+    if s.get("community"):
+        for sleutel in ("regelkanaal", "updatekanaal"):
+            naam = s.get(sleutel)
+            kanaal = next((k for k in config.kanalen if k.naam == naam), None)
+            if kanaal is None:
+                raise ConfigFout(f"server.{sleutel}: kanaal '{naam}' bestaat niet")
+            if kanaal.type != "text":
+                raise ConfigFout(f"server.{sleutel}: '{naam}' moet een tekstkanaal zijn")
+            if kanaal.stap != 0 and not kanaal.vroeg:
+                raise ConfigFout(f"server.{sleutel}: '{naam}' moet in stap 0 bestaan (stap: 0 of vroeg: true)")
 
     kanaalnamen = [k.naam for k in config.kanalen]
     dubbel = {n for n in kanaalnamen if kanaalnamen.count(n) > 1}
@@ -180,9 +205,16 @@ def kanaal_rechten(config: ServerConfig, kanaal: Kanaal) -> dict[str, Rechten]:
     Staffrollen kunnen altijd lezen en schrijven. In een alleen-lezen-kanaal mogen
     leden wel reageren met emoji, zodat aankondigingen en alerts interactief blijven.
     """
-    spraak = kanaal.type in {"voice", "stage"}
+    spraak = kanaal.type in SPRAAKTYPES
     lees = "connect" if spraak else "send_messages"
     rechten: dict[str, Rechten] = {}
+
+    if kanaal.type == "teller":
+        # Iedereen ziet het ledental, niemand kan het kanaal in.
+        rechten["@everyone"] = {"view_channel": True, "connect": False}
+        for rol in config.staffrollen:
+            rechten[rol] = {"view_channel": True}
+        return rechten
 
     if kanaal.zichtbaar == "iedereen":
         iedereen: Rechten = {"view_channel": True}
@@ -201,9 +233,11 @@ def kanaal_rechten(config: ServerConfig, kanaal: Kanaal) -> dict[str, Rechten]:
                     r.update({"create_public_threads": False, "create_private_threads": False})
             rechten[rol] = r
 
+    # Schrijvers krijgen alleen het recht om te posten. Zien doen ze via hun taalrol,
+    # zodat bijvoorbeeld een Engelstalige Trainer de NL-markt niet te zien krijgt.
     for rol in kanaal.schrijvers:
-        rechten.setdefault(rol, {"view_channel": True})
-        rechten[rol].update({"view_channel": True, lees: True})
+        rechten.setdefault(rol, {})
+        rechten[rol][lees] = True
 
     for rol in config.staffrollen:
         if spraak:
@@ -225,7 +259,7 @@ def categorie_rechten(config: ServerConfig, categorie: str) -> dict[str, Rechten
         return {"@everyone": {"view_channel": True}}
     rollen: list[str] = []
     for k in kanalen:
-        for rol in (*zichtbare_rollen(config, k), *k.schrijvers):
+        for rol in zichtbare_rollen(config, k):
             if rol not in rollen:
                 rollen.append(rol)
     rechten: dict[str, Rechten] = {"@everyone": {"view_channel": False}}

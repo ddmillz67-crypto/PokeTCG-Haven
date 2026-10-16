@@ -10,7 +10,7 @@ from haven.config import (
     kanaal_rechten,
     laad_config,
 )
-from haven.huisstijl import FOOTER, KLEUREN, maak_embed, tweetalig
+from haven.huisstijl import FOOTER, KLEUREN, kanaalkaart, maak_embed, tweetalig
 from scripts.setup_server import laad_env
 
 CONFIG = Path(__file__).resolve().parent.parent / "config" / "server.yaml"
@@ -29,15 +29,60 @@ def test_config_laadt_en_is_geldig(config):
     controleer(config)
 
 
-def test_stappenplan_heeft_24_tekstkanalen_buiten_staff(config):
+def test_stappenplan_heeft_27_tekstkanalen_buiten_staff(config):
     tekst = [k for k in config.kanalen if k.type in {"text", "news", "forum"} and k.naam != "staff-logs"]
-    assert len(tekst) == 24
-    assert sorted(k.stap for k in tekst) == list(range(1, 25))
+    assert len(tekst) == 27
+    assert sorted(k.stap for k in tekst) == list(range(1, 28))
 
 
-def test_stap_0_maakt_alleen_staff_logs(config):
-    assert [k.naam for k in config.kanalen_tot_stap(0)] == ["staff-logs"]
-    assert config.categorieen_tot_stap(0) == ["🔒 STAFF"]
+def test_stap_0_maakt_teller_regels_en_staff_logs(config):
+    # #regels bestaat al in stap 0 omdat Community-modus een regelkanaal nodig heeft.
+    assert [k.naam for k in config.kanalen_tot_stap(0)] == ["Leden", "regels", "staff-logs"]
+    assert config.categorieen_tot_stap(0) == ["📌 START", "🔒 STAFF"]
+
+
+def test_staff_categorie_staat_onderaan(config):
+    assert config.categorieen[0] == "📌 START"
+    assert config.categorieen[-1] == "🔒 STAFF"
+
+
+def test_rollen_volgens_bouwplan(config):
+    # 36 eigen rollen; met de botrol en @everyone zijn het er 38, zoals in het Bouwplan.
+    assert len(config.rollen) == 36
+    apart = {r.naam for r in config.rollen if r.apart_tonen}
+    assert apart == {"Admin", "Mod", "Haven Helper", "Creator", "Pull van de Week"}
+    assert not {"Sniper", "Elite", "Founder"} & apart, "betaalde rollen horen niet apart in de ledenlijst"
+
+
+def test_teller_naam_en_rechten(config):
+    teller = kanaal(config, "Leden")
+    assert teller.categorie is None
+    assert teller.discord_naam(1234) == "📊 Leden: 1.234"
+    r = kanaal_rechten(config, teller)
+    assert r["@everyone"] == {"view_channel": True, "connect": False}
+
+
+def test_markt_alleen_posten_vanaf_level_5(config):
+    r = kanaal_rechten(config, kanaal(config, "ruilen-verkopen"))
+    assert r["NL/BE"]["view_channel"] is True and r["NL/BE"]["send_messages"] is False
+    for rol in ("Trainer", "Ace Trainer", "Gym Leader", "Haven Legende"):
+        assert r[rol] == {"send_messages": True}, "schrijvers mogen het kanaal niet openen"
+    assert "Nieuwe Trainer" not in r
+
+
+def test_engelse_trainer_ziet_nl_markt_niet(config):
+    r = kanaal_rechten(config, kanaal(config, "ruilen-verkopen"))
+    assert "EN" not in r
+    assert "view_channel" not in r["Trainer"]
+
+
+def test_community_vereist_regelkanaal_in_stap_0(config):
+    from dataclasses import replace
+
+    regels = kanaal(config, "regels")
+    fout = replace(config, kanalen=[replace(k, vroeg=False) if k is regels else k for k in config.kanalen])
+    with pytest.raises(ConfigFout):
+        controleer(fout)
 
 
 def test_alle_rolrechten_bestaan_in_discord(config):
@@ -103,7 +148,7 @@ def test_staff_ziet_en_schrijft_overal(config):
 
 def test_partner_mag_posten_in_winkel_partners(config):
     r = kanaal_rechten(config, kanaal(config, "winkel-partners"))
-    assert r["Haven Partner"]["send_messages"] is True
+    assert r["Haven Partner"] == {"send_messages": True}
     assert r["NL/BE"]["send_messages"] is False
 
 
@@ -120,8 +165,7 @@ def test_categorie_premium_verborgen_voor_iedereen(config):
     r = categorie_rechten(config, "💎 PREMIUM")
     assert r["@everyone"] == {"view_channel": False}
     assert r["Sniper"]["view_channel"] is True
-    # Releaseavond (stage) staat in premium maar is voor taalrollen zichtbaar.
-    assert r["NL/BE"]["view_channel"] is True
+    assert "NL/BE" not in r and "EN" not in r
 
 
 def test_onbekende_rol_geeft_fout(config):
@@ -159,3 +203,12 @@ def test_laad_env_overschrijft_bestaande_variabelen_niet(tmp_path, monkeypatch):
 
     assert os.environ["HAVEN_TEST_A"] == "al-gezet"
     assert os.environ["HAVEN_TEST_B"] == "met quotes"
+
+
+def test_kanaalkaart_heeft_vier_vaste_vragen():
+    e = kanaalkaart("pulls", "Laat je pulls zien.", "Alleen foto's en video's.", "Een foto van je kaart met de set erbij.")
+    assert e.title == "📌 Over #pulls"
+    assert e.colour.value == KLEUREN["community"]
+    assert [f.name for f in e.fields] == ["Wat mag hier?", "Zo ziet een goed voorbeeld eruit", "Hulp nodig?"]
+    with pytest.raises(ValueError):
+        kanaalkaart("x", "y", "z" * 1025, "v")
