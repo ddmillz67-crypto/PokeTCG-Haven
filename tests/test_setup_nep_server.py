@@ -81,6 +81,12 @@ class _NepBasis:
     def overwrites(self, waarde):
         self._nep_ow = dict(waarde)
 
+    async def delete(self, reason=None):
+        self.server.api_calls += 1
+        for lijst in (self.server.overige, self.server.categories):
+            if self in lijst:
+                lijst.remove(self)
+
     async def move(self, *, beginning=False, end=False, category=discord.utils.MISSING, sync_permissions=False, reason=None):
         self.server.api_calls += 1
         if category is not discord.utils.MISSING:
@@ -214,6 +220,8 @@ class NepCategorie(_NepBasis, discord.CategoryChannel):
 
     async def edit(self, **kw):
         self.server.api_calls += 1
+        if "name" in kw:
+            self.name = kw["name"]
         if "overwrites" in kw:
             self.overwrites = kw["overwrites"]
         if "position" in kw:
@@ -340,7 +348,7 @@ def kanaal(server, naam):
 def test_stap_0_volgens_bouwplan():
     server = NepServer()
     eerste = draai(server, 0)
-    assert len([r for r in server.roles if r.name not in {"@everyone", "PokeTCG Haven"}]) == 37
+    assert len([r for r in server.roles if r.name not in {"@everyone", "PokeTCG Haven"}]) == 36
     assert [c.name for c in server.categories] == ["📌 START", "🔒 STAFF"]
     assert sorted(c.name for c in server.overige) == ["regels", "staff-logs", "📊 Leden: 1.234"]
     assert kanaal(server, "📊 Leden: 1.234").category_id is None, "de teller staat bovenaan, buiten een categorie"
@@ -364,16 +372,16 @@ def test_rollen_staan_in_config_volgorde_onder_de_bot():
 
 def test_tweede_run_verandert_niets():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     calls = server.api_calls
-    tweede = draai(server, 27)
+    tweede = draai(server, 24)
     assert tweede.wijzigingen == [], tweede.wijzigingen
     assert server.api_calls == calls
 
 
 def test_dry_run_verandert_niets():
     server = NepServer()
-    plan = draai(server, 27, dry_run=True)
+    plan = draai(server, 24, dry_run=True)
     assert plan.wijzigingen, "dry-run hoort de geplande wijzigingen te tonen"
     assert server.api_calls == 0
     assert [r.name for r in server.roles] == ["@everyone", "PokeTCG Haven"]
@@ -381,7 +389,7 @@ def test_dry_run_verandert_niets():
 
 def test_stap_voor_stap_bouwen_komt_uit_op_hetzelfde_als_alles_ineens():
     stapsgewijs = NepServer()
-    for stap in range(0, 28):
+    for stap in range(0, 25):
         draai(stapsgewijs, stap)
     ineens = NepServer()
     draai(ineens, 27)
@@ -391,7 +399,7 @@ def test_stap_voor_stap_bouwen_komt_uit_op_hetzelfde_als_alles_ineens():
 
 def test_categorieen_in_volgorde_met_staff_onderaan():
     server = NepServer()
-    for stap in (0, 6, 27):  # STAFF bestaat al vanaf stap 0, de rest komt later
+    for stap in (0, 6, 24):  # STAFF bestaat al vanaf stap 0, de rest komt later
         draai(server, stap)
     config = laad_config(CONFIG)
     assert [c.name for c in server.categories] == config.categorieen
@@ -399,7 +407,7 @@ def test_categorieen_in_volgorde_met_staff_onderaan():
 
 def test_news_en_stage_worden_echt_aangemaakt_dankzij_community():
     server = NepServer()
-    resultaat = draai(server, 27)
+    resultaat = draai(server, 24)
     assert kanaal(server, "aankondigingen").soort == "news"
     assert kanaal(server, "Releaseavond").soort == "stage"
     assert resultaat.waarschuwingen == []
@@ -409,7 +417,7 @@ def test_zonder_community_vervangen_met_waarschuwing():
     server = NepServer()
     config = laad_config(CONFIG)
     config = replace(config, server={**config.server, "community": False})
-    resultaat = draai(server, 27, config=config)
+    resultaat = draai(server, 24, config=config)
     assert kanaal(server, "aankondigingen").soort == "text"
     assert kanaal(server, "Releaseavond").soort == "voice"
     assert len(resultaat.waarschuwingen) == 2
@@ -424,10 +432,10 @@ def test_mislukte_community_geeft_waarschuwing_en_geen_crash():
 
 def test_handmatig_gewijzigde_rechten_worden_hersteld():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     premium = kanaal(server, "sniper-nlbe")
     premium.overwrites = {server.default_role: discord.PermissionOverwrite(view_channel=True)}
-    herstel = draai(server, 27)
+    herstel = draai(server, 24)
     assert any("sniper-nlbe" in w for w in herstel.wijzigingen)
     assert premium.overwrites[server.default_role].view_channel is False
 
@@ -441,20 +449,20 @@ def test_teller_wordt_bijgewerkt_als_het_ledental_verandert():
     assert any(c.name == "📊 Leden: 1.500" for c in server.overige)
 
 
-def test_alle_27_tekstkanalen_plus_voice_na_volledige_build():
+def test_alle_24_tekstkanalen_plus_voice_na_volledige_build():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     tekst = [c for c in server.overige if c.soort in {"text", "news", "forum"} and c.name != "staff-logs"]
-    assert len(tekst) == 27
+    assert len(tekst) == 24
     stem = {c.name for c in server.overige if c.soort in {"voice", "stage"}}
-    assert stem == {"Lounge NL/BE", "Lounge EN", "Releaseavond", "📊 Leden: 1.234"}
+    assert stem == {"Lounge", "Releaseavond", "📊 Leden: 1.234"}
 
 
 def test_geen_dubbele_kanalen_als_de_cache_achterloopt():
     server = NepServer()
     server.verberg_uit_cache("regels")
     server.verberg_uit_cache("staff-logs")
-    draai(server, 27)
+    draai(server, 24)
     namen = [c.name for c in server.overige]
     assert namen.count("regels") == 1 and namen.count("staff-logs") == 1
 
@@ -462,9 +470,9 @@ def test_geen_dubbele_kanalen_als_de_cache_achterloopt():
 def test_tekstkanaal_wordt_aankondigingskanaal_zodra_community_aan_staat():
     server = NepServer()
     config = laad_config(CONFIG)
-    draai(server, 27, config=replace(config, server={**config.server, "community": False}))
+    draai(server, 24, config=replace(config, server={**config.server, "community": False}))
     assert kanaal(server, "aankondigingen").soort == "text"
-    tweede = draai(server, 27)
+    tweede = draai(server, 24)
     assert kanaal(server, "aankondigingen").soort == "news"
     assert any("aankondigingen" in w and "type" in w for w in tweede.wijzigingen)
     # Een spraakkanaal kan geen stage worden: dat meldt het script eerlijk.
@@ -477,7 +485,7 @@ def eigen_vastgepind(kanaal, server):
 
 def test_volledige_build_plaatst_alle_inhoud():
     server = NepServer()
-    resultaat = draai(server, 27)
+    resultaat = draai(server, 24)
     assert resultaat.waarschuwingen == []
     for naam, ki in INHOUD.items():
         ch = kanaal(server, naam)
@@ -501,47 +509,47 @@ def test_inhoud_alleen_tot_de_huidige_stap():
 
 def test_gewijzigde_tekst_wordt_bewerkt_niet_opnieuw_geplaatst():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     ki = INHOUD["pulls"]
     b = ki.berichten[0]
-    nieuw_embed = {**b.embeds[0], "titel": "📌 Over #pulls (nieuw)"}
-    gewijzigd = {**INHOUD, "pulls": replace(ki, berichten=(replace(b, embeds=(nieuw_embed,)),))}
-    tweede = draai(server, 27, inhoud=gewijzigd)
+    nieuw_embed = {**b.embeds[1], "titel": "📌 Over #pulls (nieuw)"}
+    gewijzigd = {**INHOUD, "pulls": replace(ki, berichten=(replace(b, embeds=(b.embeds[0], nieuw_embed)),))}
+    tweede = draai(server, 24, inhoud=gewijzigd)
     assert tweede.wijzigingen == ["bericht bijwerken: #pulls/kaart"]
     pins = eigen_vastgepind(kanaal(server, "pulls"), server)
-    assert len(pins) == 1 and pins[0].embeds[0].title == "📌 Over #pulls (nieuw)"
+    assert len(pins) == 1 and pins[0].embeds[1].title == "📌 Over #pulls (nieuw)"
 
 
 def test_overbodig_setup_bericht_wordt_verwijderd():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     ki = INHOUD["start-hier"]
     korter = {**INHOUD, "start-hier": replace(ki, berichten=ki.berichten[:2])}
-    tweede = draai(server, 27, inhoud=korter)
+    tweede = draai(server, 24, inhoud=korter)
     assert tweede.wijzigingen == ["oud setup-bericht verwijderen: #start-hier"]
     assert len(eigen_vastgepind(kanaal(server, "start-hier"), server)) == 2
 
 
 def test_berichten_van_leden_tellen_niet_mee():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     ch = kanaal(server, "pulls")
     lid = type("Lid", (), {"id": 42})()
     ch.berichten.append(NepBericht(ch, lid, []))  # gewone pull van een lid, niet vastgepind
-    tweede = draai(server, 27)
+    tweede = draai(server, 24)
     assert tweede.wijzigingen == []
 
 
 def test_dry_run_waarschuwt_niet_voor_community_kanalen():
     server = NepServer()
-    plan = draai(server, 27, dry_run=True)
+    plan = draai(server, 24, dry_run=True)
     assert plan.waarschuwingen == []
     assert any("aankondigingen (news)" in w for w in plan.wijzigingen)
 
 
 def test_kanalen_staan_in_de_volgorde_van_het_plan():
     server = NepServer()
-    draai(server, 27)
+    draai(server, 24)
     config = laad_config(CONFIG)
     for cat in server.categories:
         tekst = sorted(
@@ -550,7 +558,7 @@ def test_kanalen_staan_in_de_volgorde_van_het_plan():
         )
         verwacht = [k.naam for k in config.kanalen if k.categorie == cat.name and k.type in {"text", "news", "forum"}]
         assert [c.name for c in tekst] == verwacht, cat.name
-    tweede = draai(server, 27)
+    tweede = draai(server, 24)
     assert tweede.wijzigingen == []
 
 
@@ -562,3 +570,43 @@ def test_ledenteller_staat_bovenaan():
     draai(server, 0)
     los = sorted((c for c in server.overige if c.category_id is None), key=lambda c: c.position)
     assert los[0].name.startswith("📊 Leden")
+
+
+def test_bestaande_server_wordt_omgezet_naar_alleen_nederlands():
+    """Een server zoals hij nu live staat: met NL/BE, EN, een Engelse sectie en #general."""
+    server = NepServer()
+    server.me.top_role.position = 50  # zoals in Discord: de botrol staat boven de oude rollen
+    nlbe = NepRol("NL/BE", 2)
+    en = NepRol("EN", 3)
+    server.roles += [nlbe, en]
+    oud_cat = NepCategorie(server, "🇳🇱🇧🇪 NEDERLAND & BELGIË", {})
+    eng_cat = NepCategorie(server, "🇬🇧 ENGLISH", {})
+    server.categories += [oud_cat, eng_cat]
+    chat_oud = NepTekstkanaal(server, "chat-nlbe", "text", oud_cat)
+    lounge_oud = NepKanaal(server, "Lounge NL/BE", "voice", oud_cat)
+    server.overige += [chat_oud, lounge_oud, NepTekstkanaal(server, "chat-en", "text", eng_cat), NepKanaal(server, "Lounge EN", "voice", eng_cat), NepTekstkanaal(server, "general", "text")]
+    verwijderd = []
+    for c in [*server.overige, *server.categories]:
+        origineel = c.delete
+
+        async def weg(reason=None, c=c, origineel=origineel):
+            verwijderd.append(c.name)
+            await origineel(reason=reason)
+
+        c.delete = weg
+
+    async def rol_weg(reason=None):
+        verwijderd.append(en.name)
+        server.roles.remove(en)
+
+    en.delete = rol_weg
+    resultaat = draai(server, 24)
+
+    assert nlbe.name == "Lid", "de rol NL/BE is hernoemd, zodat leden hun toegang houden"
+    assert chat_oud.name == "chat" and lounge_oud.name == "Lounge", "kanalen hernoemd, berichten blijven"
+    assert oud_cat.name == "💬 CHAT & HANDEL"
+    assert {"chat-en", "Lounge EN", "general", "🇬🇧 ENGLISH", "EN"} <= set(verwijderd)
+    namen = [c.name for c in server.overige]
+    assert namen.count("chat") == 1 and namen.count("Lounge") == 1, "niets dubbel aangemaakt"
+    assert [r.name for r in server.roles].count("Lid") == 1
+    assert resultaat.waarschuwingen == []

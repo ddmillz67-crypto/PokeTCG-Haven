@@ -10,13 +10,13 @@ from discord.ext import commands
 from bot.kern import HavenBot, antwoord
 from haven.levels import ALLE_LEVELROLLEN, LEVEL_ROLLEN
 
-TALEN = {"nlbe": ("NL/BE", "EN"), "en": ("EN", "NL/BE")}
+LIDROL = "Lid"
 
 
 class Start(commands.Cog):
     def __init__(self, bot: HavenBot):
         self.bot = bot
-        bot.actie("taal", self.taal)
+        bot.actie("binnen", self.binnen)
         bot.actie("regels:vraag", self.vraag)
 
     async def zorg_voor_levelrol(self, lid: discord.Member) -> None:
@@ -26,24 +26,23 @@ class Start(commands.Cog):
         if rol:
             await lid.add_roles(rol, reason="Nieuw lid")
 
-    async def taal(self, interaction: discord.Interaction, keuze: str) -> None:
-        if keuze not in TALEN:
-            return
+    async def binnen(self, interaction: discord.Interaction, _: str) -> None:
         lid = interaction.user
-        aan, uit = (self.bot.rol(n) for n in TALEN[keuze])
-        if aan is None:
-            await antwoord(interaction, "De taalrollen bestaan nog niet. Het team is ermee bezig!")
+        rol = self.bot.rol(LIDROL)
+        if rol is None:
+            await antwoord(interaction, "De server wordt nog ingericht. Probeer het zo nog eens!")
             return
-        if uit and uit in lid.roles:
-            await lid.remove_roles(uit, reason="Taal gewijzigd")
-        if aan not in lid.roles:
-            await lid.add_roles(aan, reason="Taal gekozen")
+        al_binnen = rol in lid.roles
+        if not al_binnen:
+            await lid.add_roles(rol, reason="Kom binnen")
         await self.zorg_voor_levelrol(lid)
-        if keuze == "nlbe":
-            tekst = "🇳🇱🇧🇪 Gelukt! Je ziet nu de Nederlands-Belgische sectie. Volgende stap: lees de regels in {#regels} en volg daarna de tour in {#server-tour}."
-        else:
-            tekst = "🇬🇧 Done! You can now see the English section. Next: read the rules in {#regels} and take the tour in {#server-tour}."
-        await antwoord(interaction, self.bot.tekst(tekst))
+        e = self.bot.embed(
+            "community",
+            "🧡  Je bent er al!" if al_binnen else "🧡  Welkom binnen!",
+            "Je hebt nu toegang tot de hele community.\n\n"
+            "**Volgende stap:** lees de huisregels in {#regels} en volg daarna de tour in {#server-tour}.",
+        )
+        await antwoord(interaction, embed=e)
 
     async def vraag(self, interaction: discord.Interaction, _: str) -> None:
         tickets = self.bot.get_cog("Tickets")

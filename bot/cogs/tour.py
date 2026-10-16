@@ -22,10 +22,9 @@ class Tour(commands.Cog):
     def scherm(self, nummer: int, lid: discord.Member) -> tuple[discord.Embed, discord.ui.View]:
         paginas = self.data["paginas"]
         p = paginas[nummer]
-        engels = any(r.name == "EN" for r in getattr(lid, "roles", []))
-        kanaal = p.get("kanaal_en", p["kanaal"]) if engels else p["kanaal"]
+        kanaal = p["kanaal"]
         embed = self.bot.embed("merk", p["titel"], p["tekst"])
-        embed.set_footer(text=f"Stap {nummer + 1} van {len(paginas)} · PokeTCG Haven")
+        embed.set_footer(text=f"Stap {nummer + 1} van {len(paginas)}  ·  PokeTCG Haven")
         view = discord.ui.View(timeout=None)
         if nummer > 0:
             view.add_item(discord.ui.Button(label="Vorige", emoji="⬅️", custom_id=f"{PREFIX}tour:pagina:{nummer - 1}"))
@@ -61,8 +60,8 @@ class Tour(commands.Cog):
                 e = self.bot.embed(
                     "community",
                     "👋 Welkom in de community!",
-                    f"{lid.mention} heeft de tour afgerond. Vertel ons wie je bent en wat je verzamelt! "
-                    "Kijk in de vastgepinde kanaalkaart voor een voorbeeld.\n🇬🇧 Tell us who you are and what you collect!",
+                    f"{lid.mention} heeft de tour afgerond! 🎉\n\n"
+                    "Vertel ons **wie je bent** en **wat je verzamelt**. In de vastgepinde kanaalkaart staat een voorbeeld.",
                 )
                 await ch.send(content=lid.mention, embed=e, allowed_mentions=discord.AllowedMentions(users=True))
 
@@ -70,7 +69,7 @@ class Tour(commands.Cog):
         k = self.data["kwijt"]
         await antwoord(interaction, embed=self.bot.embed("merk", k["titel"], "\n".join(k["regels"])))
 
-    @app_commands.command(name="tour", description="Start je persoonlijke tour door de server / Start your server tour")
+    @app_commands.command(name="tour", description="Start je persoonlijke tour door de server")
     async def tour(self, interaction: discord.Interaction) -> None:
         await self.start(interaction)
 

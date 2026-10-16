@@ -51,7 +51,7 @@ class Giveaways(commands.Cog):
             f"🎁 Giveaway: {g['prijs']}",
             f"**Vraag:** {g['vraag']}\n**Schiftingsvraag:** {g['schiftingsvraag']}\n\n"
             + ("Deze giveaway is gesloten." if gesloten else f"Sluit <t:{eind}:R> (<t:{eind}:f>). Meedoen is gratis.")
-            + "\n🇬🇧 Free to enter: answer the question and make a guess.",
+            ,
         )
         e.add_field(name="Deelnemers", value=str(deelnemers))
         if g["sponsor"]:
@@ -85,7 +85,7 @@ class Giveaways(commands.Cog):
         ).lastrowid
         g = self.bot.db.een("SELECT * FROM giveaways WHERE id = ?", (gid,))
         view = discord.ui.View(timeout=None)
-        view.add_item(discord.ui.Button(label="Doe mee / Enter", emoji="🎁", style=discord.ButtonStyle.success, custom_id=f"{PREFIX}giveaway:doe:{gid}"))
+        view.add_item(discord.ui.Button(label="Doe mee", emoji="🎁", style=discord.ButtonStyle.success, custom_id=f"{PREFIX}giveaway:doe:{gid}"))
         ping = self.bot.rol("Giveaway-ping")
         m = await ch.send(content=ping.mention if ping else None, embed=self.giveaway_embed(g, 0), view=view, allowed_mentions=discord.AllowedMentions(roles=True))
         self.bot.db.uitvoeren("UPDATE giveaways SET bericht_id = ? WHERE id = ?", (m.id, gid))
@@ -196,7 +196,7 @@ class Giveaways(commands.Cog):
         e = self.bot.embed(
             "community", "🎯 Op weg naar de volgende giveaway",
             f"Bij **{getal(volgende)} leden** geven we weg: **{prijs}**\n\n`{balk(leden)}`\n**{getal(leden)}** van {getal(volgende)} leden\n\n"
-            "Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen link.\n🇬🇧 Know a collector? Use `/invite`.",
+            "Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen link.",
         )
         bericht_id = self.bot.db.kv_lees("teller:bericht")
         m = None
@@ -231,7 +231,7 @@ class Giveaways(commands.Cog):
             self.bot.db.kv_schrijf("mijlpalen:gemeld", json.dumps(sorted(gemeld)))
             ch = self.bot.kanaal("aankondigingen")
             if ch:
-                await ch.send(embed=self.bot.embed("community", f"🎉 We zijn met {getal(grens)}!", "Bedankt allemaal! De mijlpaal-giveaway komt eraan in {#giveaways}. 🇬🇧 Thank you all! The milestone giveaway is coming."))
+                await ch.send(embed=self.bot.embed("community", f"🎉 We zijn met {getal(grens)}!", "Bedankt allemaal! 🧡\n\nDe mijlpaal-giveaway komt eraan in {#giveaways}."))
             await self.bot.log(f"🎯 Mijlpaal {getal(grens)} leden bereikt. Start de giveaway met `/giveaway start`.")
 
 

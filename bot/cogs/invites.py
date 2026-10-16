@@ -124,7 +124,7 @@ class Invites(commands.Cog):
     async def knop(self, interaction: discord.Interaction, _: str) -> None:
         await self.toon(interaction)
 
-    @app_commands.command(name="invite", description="Krijg je persoonlijke uitnodigingslink / Get your invite link")
+    @app_commands.command(name="invite", description="Krijg je persoonlijke uitnodigingslink")
     async def invite(self, interaction: discord.Interaction) -> None:
         await self.toon(interaction)
 

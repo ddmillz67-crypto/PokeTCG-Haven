@@ -2,41 +2,49 @@ kanaal: start-hier
 berichten:
   - sleutel: welkom
     embeds:
+      - banner: welkom
+        soort: community
       - soort: community
-        titel: "Welkom bij PokeTCG Haven 🧡"
+        titel: "Welkom in PokeTCG Haven 🧡"
         beschrijving: |
-          **De gezelligste Pokémon TCG-community van Nederland en België.**
-          Deel je pulls, ruil veilig en mis nooit meer een release. Of je nu net je eerste booster hebt geopend of al twintig jaar verzamelt: je bent hier welkom.
+          **Fijn dat je er bent!**
 
-          🇬🇧 **The friendliest Pokémon TCG community in the Netherlands and Belgium.** Share your pulls, trade safely and never miss a release. Beginner or veteran collector: you're welcome here.
+          PokeTCG Haven is dé plek voor Pokémon TCG-verzamelaars uit **Nederland en België**.
+
+          Hier deel je je mooiste **pulls**, ruil je **veilig** met andere verzamelaars en mis je **nooit meer een release**.
+
+          > Of je nu net je eerste booster opent of al twintig jaar verzamelt: **je hoort erbij.**
 
   - sleutel: wat-vind-je-hier
     embeds:
       - soort: merk
-        titel: "Wat vind je hier? / What's inside?"
+        titel: "Wat vind je hier?"
         velden:
-          - naam: "📸 Pulls en collecties"
-            waarde: "Laat je mooiste pulls en binders zien aan mensen die het snappen. Elke vrijdag kiezen we de Pull van de Week.\n🇬🇧 Show your best pulls and binders. Every Friday we pick the Pull of the Week."
-          - naam: "🔁 Veilig ruilen"
-            waarde: "Kopen, verkopen en ruilen met vouches, zodat je weet met wie je handelt.\n🇬🇧 Buy, sell and trade with vouches, so you know who you're dealing with."
-          - naam: "📅 Releases en restocks"
-            waarde: "Een releasekalender voor NL/BE en alerts zodra er weer voorraad is.\n🇬🇧 A release calendar for NL/BE and alerts when stock returns."
-          - naam: "🎁 Giveaways"
-            waarde: "Bij elke mijlpaal geven we iets weg, oplopend tot booster boxes. Meedoen is altijd gratis.\n🇬🇧 At every member milestone we give something away, up to booster boxes. Always free to enter."
-          - naam: "🎓 Hulp voor beginners"
-            waarde: "Vraag gerust: echt of nep, wat is iets waard, waar begin je? Onze Haven Helpers helpen je graag.\n🇬🇧 Ask anything: real or fake, what's it worth, where to start? Our Haven Helpers are happy to help."
+          - naam: "📸  Pulls en collecties"
+            waarde: "Laat je mooiste kaarten zien aan mensen die het snappen.\nElke vrijdag kiezen we de **Pull van de Week**.\n​"
+          - naam: "🔁  Veilig ruilen"
+            waarde: "Kopen, verkopen en ruilen met **vouches**,\nzodat je altijd weet met wie je handelt.\n​"
+          - naam: "📅  Releases en restocks"
+            waarde: "Een **releasekalender** voor Nederland en België,\nen **alerts** zodra er weer voorraad is.\n​"
+          - naam: "🎁  Giveaways"
+            waarde: "Bij elke mijlpaal geven we iets weg, oplopend tot **booster boxes**.\nMeedoen is **altijd gratis**.\n​"
+          - naam: "🎓  Hulp voor beginners"
+            waarde: "Echt of nep? Wat is het waard? Waar begin je?\nOnze **Haven Helpers** helpen je graag."
 
-  - sleutel: begin-hier
+  - sleutel: kom-binnen
     embeds:
-      - soort: merk
-        titel: "Begin hier in 3 stappen / Start in 3 steps"
+      - soort: community
+        titel: "Zo kom je binnen"
         beschrijving: |
-          **1.** Kies je taal met de knoppen hieronder. Je krijgt dan je eigen sectie te zien.
-          **2.** Lees de regels in {#regels}. Ze zijn kort en we leggen uit waarom.
-          **3.** Volg de tour in {#server-tour} en stel je voor. Dan ben je helemaal binnen!
+          **Stap 1  ·  Klik op Kom binnen**
+          Je krijgt direct toegang tot de hele community.
 
-          🇬🇧 **1.** Choose your language below to unlock your section. **2.** Read the rules in {#regels}. **3.** Take the tour in {#server-tour} and introduce yourself.
+          **Stap 2  ·  Lees de huisregels**
+          Kort en duidelijk, met uitleg waarom. Je vindt ze in {#regels}.
+
+          **Stap 3  ·  Volg de tour**
+          In een paar klikken weet je precies hoe alles werkt.
     knoppen:
-      - { label: "Nederlands / Vlaams", emoji: "🇳🇱", actie: "taal:nlbe", stijl: primair }
-      - { label: "English", emoji: "🇬🇧", actie: "taal:en", stijl: primair }
-      - { label: "Naar de regels / Rules", emoji: "📜", kanaal: regels }
+      - { label: "Kom binnen", emoji: "🚪", actie: "binnen", stijl: groen }
+      - { label: "Lees de huisregels", emoji: "📜", kanaal: regels }
+      - { label: "Start de tour", emoji: "🧭", actie: "tour:start" }

@@ -52,6 +52,32 @@ def test_elk_tekstkanaal_behalve_staff_heeft_inhoud(config, inhoud):
     assert tekst == set(inhoud)
 
 
+def test_geen_engels_meer_in_de_inhoud():
+    import re
+
+    from haven.inhoud import INHOUD_MAP
+
+    for pad in INHOUD_MAP.glob("*.yaml"):
+        tekst = pad.read_text(encoding="utf-8")
+        assert "🇬🇧" not in tekst, pad.name
+        for engels in ("Welcome", "Read the", "Trade safely", "Open a ticket", "Pick your", "Free to enter"):
+            assert engels not in tekst, f"{pad.name}: {engels}"
+        assert not re.search(r"\bthe\b", tekst), pad.name
+
+
+def test_elk_kanaal_begint_met_een_banner(inhoud):
+    for naam, ki in inhoud.items():
+        assert "banner" in ki.berichten[0].embeds[0], f"#{naam} mist een banner bovenaan"
+
+
+def test_banners_en_logo_bestaan_en_hebben_een_versie(config):
+    from haven.inhoud import AFBEELDINGEN, afbeelding_url
+
+    assert (AFBEELDINGEN / "logo.png").exists()
+    url = afbeelding_url("welkom", {})
+    assert url.startswith("https://raw.githubusercontent.com/") and "?v=" in url and not url.endswith("?v=0")
+
+
 def test_alles_bouwt_binnen_discord_limieten(config, inhoud):
     async def bouw():
         c = ctx(config)
@@ -71,6 +97,7 @@ def test_alles_bouwt_binnen_discord_limieten(config, inhoud):
 
 def test_verwijzingen_worden_ingevuld(config):
     c = ctx(config, env={"WHOP_SNIPER_URL": "https://whop.com/x"})
+    assert "/welkom.png?v=" in vul_in("{afbeelding:welkom}", c)
     tekst = vul_in("Lees {#regels}, vraag {@Haven Helper}, link {link:#store}, koop {env:WHOP_SNIPER_URL}", c)
     assert f"<#{c.kanalen['regels']}>" in tekst
     assert f"<@&{c.rollen['Haven Helper']}>" in tekst
@@ -107,7 +134,7 @@ def test_tour_en_store_teksten_kloppen(config):
     namen = {k.naam for k in config.kanalen}
     assert len(tour["paginas"]) == 7
     for p in tour["paginas"]:
-        assert p["kanaal"] in namen and p.get("kanaal_en", p["kanaal"]) in namen
+        assert p["kanaal"] in namen
     store = laad_yaml("store.yaml")
     assert {"sniper", "founder", "elite", "partner"} <= set(store["info"])
 

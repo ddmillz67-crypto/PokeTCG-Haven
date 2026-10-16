@@ -3,17 +3,20 @@ berichten:
   - sleutel: kaart
     post_titel: "📌 Lees dit eerst: veilig handelen"
     embeds:
+      - banner: markt
+        soort: merk
       - soort: regels
-        titel: "📌 Veilig handelen in de markt"
-        beschrijving: "Elke post is één advertentie met een tag: **Te koop**, **Gezocht** of **Ruil**. Posten kan vanaf level 5; reageren op een advertentie kan iedereen."
+        titel: "📌  Veilig handelen in de markt"
+        beschrijving: |
+          Elke post is **één advertentie** met een tag: **Te koop**, **Gezocht** of **Ruil**.
+
+          Posten kan vanaf **level 5**. Reageren op een advertentie kan iedereen.
         velden:
-          - naam: "📸 Foto's verplicht"
-            waarde: "Voor- en achterkant, met je Discord-naam en de datum op een papiertje ernaast. Een post zonder foto wordt gesloten."
-          - naam: "💶 Prijs of ruilwens erbij"
-            waarde: "Geen \"bied maar\" zonder richtprijs. Vermeld de conditie eerlijk (Near Mint, Lightly Played…) en laat beschadigingen zien."
-          - naam: "🤝 Afronden"
-            waarde: "Beide partijen geven `/vouch`. Na 5 vouches kun je Verified Trader worden. Boven circa €50 verzend je aangetekend of verzekerd, met de track-and-trace in de thread."
-          - naam: "⚠️ Let op"
-            waarde: "Betaal een onbekende nooit via een methode zonder kopersbescherming. Het team bemiddelt bij problemen, maar is geen partij bij de deal en vergoedt geen schade. Handelen met geld vanaf 16 jaar, of jonger met toestemming van een ouder."
-          - naam: "Hulp nodig?"
-            waarde: "Open een ticket in {#tickets}."
+          - naam: "📸  Foto's verplicht"
+            waarde: "Voor- en achterkant, met je **Discord-naam** en de **datum** op een papiertje ernaast.\nEen post zonder foto wordt automatisch gesloten.\n​"
+          - naam: "💶  Prijs of ruilwens erbij"
+            waarde: "Geen *\"bied maar\"* zonder richtprijs.\nVermeld de conditie eerlijk (**Near Mint**, **Lightly Played** …) en laat beschadigingen zien.\n​"
+          - naam: "🤝  Deal afronden"
+            waarde: "Geef elkaar een `/vouch`. Met **5 vouches** kun je **Verified Trader** worden.\nBoven circa **€50** verzend je aangetekend of verzekerd, met de track-and-trace in de thread.\n​"
+          - naam: "⚠️  Let op"
+            waarde: "Betaal een onbekende **nooit** zonder kopersbescherming.\nHet team bemiddelt bij problemen, maar is geen partij bij de deal en vergoedt geen schade.\nHandelen met geld vanaf **16 jaar**, of jonger met toestemming van een ouder."

@@ -78,7 +78,7 @@ class Levels(commands.Cog):
             if invites:
                 await invites.beloon(lid, "legende", "Sniper Proef", dagen=30)
 
-    @app_commands.command(name="level", description="Bekijk je level en XP / See your level")
+    @app_commands.command(name="level", description="Bekijk je level en XP")
     async def level(self, interaction: discord.Interaction, lid: discord.Member | None = None) -> None:
         lid = lid or interaction.user
         xp = self.bot.db.lid(lid.id)["xp"]

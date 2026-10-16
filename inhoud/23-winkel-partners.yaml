@@ -1,0 +1,15 @@
+kanaal: winkel-partners
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: partners
+        soort: merk
+      - soort: merk
+        titel: "🏪  Onze partnerwinkels"
+        beschrijving: |
+          **Lokale kaartwinkels** delen hier hun restocks, league-avonden en events. Elke winkel heeft een **eigen thread**.
+        velden:
+          - naam: "🧡  Steun je lokale winkel"
+            waarde: "Partnerwinkels sponsoren soms onze **giveaways** en organiseren **ruildagen**.\nZeg gerust dat je via PokeTCG Haven komt!\n​"
+          - naam: "🏪  Heb je zelf een winkel?"
+            waarde: "Bekijk **Haven Partner** in {#store} of open een ticket in {#tickets}."

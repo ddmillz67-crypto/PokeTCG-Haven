@@ -1,0 +1,12 @@
+kanaal: success
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: success
+        soort: alert
+      - soort: alert
+        titel: "🏆  Gescoord!"
+        beschrijving: |
+          Iets gekocht dankzij een **alert** of de **winkel-radar**?
+
+          Klik op **Gescoord!** onder de alert, dan verschijnt je succes hier. Zo ziet iedereen dat **samen zoeken werkt**.

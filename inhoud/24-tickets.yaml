@@ -1,0 +1,18 @@
+kanaal: tickets
+berichten:
+  - sleutel: paneel
+    embeds:
+      - banner: tickets
+        soort: merk
+      - soort: merk
+        titel: "🛟  Open een ticket"
+        beschrijving: |
+          Kies hieronder **waar je hulp bij nodig hebt**.
+
+          Er opent een **privégesprek** met jou en het team. **Niemand anders** kan het zien.
+    knoppen:
+      - { label: "Hulp", emoji: "❓", actie: "ticket:hulp", stijl: primair }
+      - { label: "Store en betaling", emoji: "🛒", actie: "ticket:store" }
+      - { label: "Iets melden", emoji: "🚩", actie: "ticket:melding", stijl: rood }
+      - { label: "Giveaway gewonnen", emoji: "🎁", actie: "ticket:giveaway", stijl: groen }
+      - { label: "Partner worden", emoji: "🏪", actie: "ticket:partner" }

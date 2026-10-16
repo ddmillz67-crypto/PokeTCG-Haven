@@ -1,39 +1,38 @@
 # De persoonlijke tour (alleen zichtbaar voor het lid). Elke pagina heeft een knop naar het kanaal.
 paginas:
-  - titel: "🎛️ Kies je rollen"
-    tekst: "Vertel wat je verzamelt, waar je woont en welke meldingen je wilt. Dan krijg je alleen wat jij interessant vindt.\n🇬🇧 Pick what you collect, where you live and which pings you want."
+  - titel: "🎛️  Kies je rollen"
+    tekst: "Vertel **wat je verzamelt**, **waar je woont** en **welke meldingen** je wilt.\n\nDan krijg je alleen wat jij interessant vindt."
     kanaal: rollen
-  - titel: "👋 Stel je voor"
-    tekst: "Vertel wie je bent en wat je verzamelt. Binnen 24 uur zegt een Haven Helper hallo.\n🇬🇧 Introduce yourself; a Haven Helper will say hi within 24 hours."
+  - titel: "👋  Stel je voor"
+    tekst: "Vertel **wie je bent** en **wat je verzamelt**.\n\nBinnen **24 uur** zegt een Haven Helper hallo."
     kanaal: voorstellen
-  - titel: "📸 Deel je pulls"
-    tekst: "Elke pull telt! Geef de mooiste een ⭐; elke vrijdag kiezen we de Pull van de Week.\n🇬🇧 Every pull counts. Star your favourites; every Friday we pick the Pull of the Week."
+  - titel: "📸  Deel je pulls"
+    tekst: "**Elke pull telt!** Geef de mooiste een ⭐.\n\nElke **vrijdag** kiezen we de **Pull van de Week**."
     kanaal: pulls
-  - titel: "📒 Laat je collectie zien"
-    tekst: "Maak één post voor je binder, sealed of graded kaarten. Elke maandag is het Binder Monday.\n🇬🇧 Make one post for your collection. Every Monday is Binder Monday."
+  - titel: "📒  Laat je collectie zien"
+    tekst: "Maak **één post** voor je binder, sealed of graded kaarten.\n\nElke **maandag** is het **Binder Monday**."
     kanaal: collecties
-  - titel: "📅 Releases en restocks"
-    tekst: "De releasekalender, gratis restock-alerts en de winkel-radar, waar leden voorraad in winkels melden.\n🇬🇧 The release calendar, free restock alerts and the store radar."
+  - titel: "📅  Releases en restocks"
+    tekst: "De **releasekalender**, gratis **restock-alerts** en de **winkel-radar**, waar leden voorraad in winkels melden."
     kanaal: release-kalender
-  - titel: "🔁 Veilig ruilen"
-    tekst: "Kopen, verkopen en ruilen doe je in de markt, vanaf level 5. Check altijd de vouches.\n🇬🇧 Trade in the market from level 5. Always check vouches."
+  - titel: "🔁  Veilig ruilen"
+    tekst: "Kopen, verkopen en ruilen doe je in de markt, vanaf **level 5**.\n\nCheck altijd de **vouches** van je handelspartner."
     kanaal: ruilen-verkopen
-    kanaal_en: trade-en
-  - titel: "🎁 Giveaways en events"
-    tekst: "Bij elke mijlpaal geven we iets weg, en elke zondag om 20:00 openen we samen packs. Meedoen is altijd gratis.\n\n*Wil je ooit sneller zijn bij restocks? Kijk dan in de Store. Geen verplichting: de community blijft gratis.*\n🇬🇧 Giveaways at every milestone and a pack night every Sunday at 20:00."
+  - titel: "🎁  Giveaways en events"
+    tekst: "Bij elke **mijlpaal** geven we iets weg, en elke **zondag om 20:00** openen we samen packs. Meedoen is **altijd gratis**.\n\n> Wil je ooit sneller zijn bij restocks? Kijk dan eens in de Store. Geen verplichting: de community blijft gratis."
     kanaal: giveaways
 
 afsluiting:
-  titel: "🎉 Je bent helemaal wegwijs!"
-  tekst: "Je hebt de rol **Wegwijs** gekregen. Kom je voorstellen in de community, we zijn benieuwd naar je!\n\nKen je iemand die ook verzamelt? Met `/invite` krijg je je eigen uitnodigingslink.\n🇬🇧 You're all set! Come introduce yourself. Know another collector? Use `/invite` for your own link."
+  titel: "🎉  Je bent helemaal wegwijs!"
+  tekst: "Je hebt de rol **Wegwijs** gekregen.\n\nKom je voorstellen in de community, we zijn benieuwd naar je!\n\n> Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen uitnodigingslink."
 
 kwijt:
-  titel: "🗺️ Waar vind ik wat? / Where is what?"
+  titel: "🗺️  Waar vind ik wat?"
   regels:
-    - "**Kletsen:** {#chat-nlbe} of {#chat-en}"
-    - "**Een vraag:** {#vragen-hulp} of {#help-en}"
-    - "**Kopen, verkopen, ruilen:** {#ruilen-verkopen} of {#trade-en}"
-    - "**Pulls en collecties:** {#pulls} en {#collecties}"
-    - "**Releases en restocks:** {#release-kalender} en {#restocks}"
-    - "**Giveaways:** {#giveaways}"
-    - "**Persoonlijke hulp:** {#tickets}"
+    - "**Kletsen** ·  {#chat}"
+    - "**Een vraag** ·  {#vragen-hulp}"
+    - "**Kopen, verkopen, ruilen** ·  {#ruilen-verkopen}"
+    - "**Pulls en collecties** ·  {#pulls} en {#collecties}"
+    - "**Releases en restocks** ·  {#release-kalender} en {#restocks}"
+    - "**Giveaways** ·  {#giveaways}"
+    - "**Persoonlijke hulp** ·  {#tickets}"

@@ -1,0 +1,19 @@
+kanaal: chat
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: chat
+        soort: community
+      - soort: community
+        titel: "📌  Over #chat"
+        beschrijving: |
+          **De huiskamer van PokeTCG Haven.**
+
+          Kletsen over kaarten, sets, je laatste aankoop of gewoon over je dag.
+        velden:
+          - naam: "💬  Wat mag hier?"
+            waarde: "Alles wat gezellig is en met Pokémon of verzamelen te maken heeft.\nKopen en verkopen doe je in {#ruilen-verkopen}, vragen stel je in {#vragen-hulp}.\n​"
+          - naam: "❓  Vraag van de week"
+            waarde: "Elke **woensdag** stellen we hier een vraag aan iedereen, zoals:\n> *\"Welke kaart zoek je al jaren?\"*\n​"
+          - naam: "📈  Levels"
+            waarde: "Meepraten levert **XP** op. Vanaf **level 3** doe je mee aan giveaways, vanaf **level 5** post je in de markt.\nBekijk je level met `/level`."

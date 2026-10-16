@@ -40,7 +40,7 @@ class Releases(commands.Cog):
         ping = self.bot.rol("Release-ping")
         m = await ch.send(content=ping.mention if ping else None, embed=e, allowed_mentions=discord.AllowedMentions(roles=True))
         thread = await m.create_thread(name=f"Releasedraad: {naam}"[:90])
-        await thread.send(embed=self.bot.embed("release", "💬 Releasedraad", "Deel hier tips: welke winkels pakken vroeg uit, hoe lang is de rij, wat is er nog op voorraad? 🇬🇧 Share release-day tips here."))
+        await thread.send(embed=self.bot.embed("release", "💬 Releasedraad", "Deel hier je tips: welke winkels pakken vroeg uit, hoe lang is de rij en wat is er nog op voorraad?"))
         await antwoord(interaction, f"✅ Release geplaatst: {m.jump_url}")
 
 

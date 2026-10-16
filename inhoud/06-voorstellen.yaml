@@ -2,13 +2,18 @@ kanaal: voorstellen
 berichten:
   - sleutel: kaart
     embeds:
+      - banner: voorstellen
+        soort: community
       - soort: community
-        titel: "📌 Over #voorstellen"
-        beschrijving: "Stel je voor aan de community! Binnen 24 uur zegt een van onze Haven Helpers hallo, en vaak nog veel meer leden.\n🇬🇧 Introduce yourself! Within 24 hours one of our Haven Helpers will say hi."
+        titel: "📌  Over #voorstellen"
+        beschrijving: |
+          **Stel je voor aan de community!**
+
+          Binnen **24 uur** zegt een van onze **Haven Helpers** hallo, en vaak nog veel meer leden.
         velden:
-          - naam: "Wat mag hier? / What goes here?"
-            waarde: "Eén voorstelling per persoon, in het Nederlands of Engels. Reageren doe je in de thread onder een voorstelling.\n🇬🇧 One introduction per person. Reply in the thread below it."
-          - naam: "Voorbeeld / Example"
-            waarde: "**Naam:** Sam\n**Verzamel sinds:** 2004, weer opgepakt in 2023\n**Favoriete Pokémon:** Gengar\n**Wat verzamel ik:** Japanse sets en alles met Gengar\n**Pronkstuk:** een Gengar VMAX alt art"
-          - naam: "Hulp nodig? / Need help?"
-            waarde: "Vraag het in {#vragen-hulp} of {#help-en}, of volg de tour in {#server-tour}."
+          - naam: "✍️  Wat mag hier?"
+            waarde: "**Eén voorstelling** per persoon. Reageren doe je in de thread onder een voorstelling.\n​"
+          - naam: "💡  Zo kun je het doen"
+            waarde: "**Naam:** Sam\n**Verzamel sinds:** 2004, weer opgepakt in 2023\n**Favoriete Pokémon:** Gengar\n**Wat ik verzamel:** Japanse sets en alles met Gengar\n**Pronkstuk:** een Gengar VMAX alt art\n​"
+          - naam: "❓  Hulp nodig?"
+            waarde: "Stel je vraag in {#vragen-hulp} of volg de tour in {#server-tour}."

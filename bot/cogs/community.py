@@ -50,8 +50,7 @@ class Community(commands.Cog):
                 return
             await m.delete()
             await m.channel.send(
-                f"{m.author.mention} in #pulls mogen alleen foto's en video's. Reageren kan in de thread onder een pull! "
-                "🇬🇧 Photos and videos only; reply in the thread.",
+                f"{m.author.mention} in #pulls mogen alleen foto's en video's. Reageren kan in de thread onder een pull! 📸",
                 delete_after=10,
             )
             return
@@ -140,22 +139,17 @@ class Community(commands.Cog):
         await self.bot.setup_klaar.wait()
 
     async def binder_monday(self, _: dt.datetime) -> None:
-        for naam, tekst in (
-            ("chat-nlbe", "📒 Het is **Binder Monday**! Laat je mooiste binderpagina zien in {#collecties}."),
-            ("chat-en", "📒 It's **Binder Monday**! Show your best binder page in {#collecties}."),
-        ):
-            ch = self.bot.kanaal(naam)
-            if ch:
-                await ch.send(embed=self.bot.embed("community", "Binder Monday", tekst))
+        ch = self.bot.kanaal("chat")
+        if ch:
+            await ch.send(embed=self.bot.embed("community", "📒  Binder Monday", "Het is **Binder Monday**!\n\nLaat je mooiste binderpagina zien in {#collecties}."))
 
     async def vraag_van_de_week(self, _: dt.datetime) -> None:
         nummer = int(self.bot.db.kv_lees("vraag:nummer", "0"))
         v = self.vragen[nummer % len(self.vragen)]
         self.bot.db.kv_schrijf("vraag:nummer", str(nummer + 1))
-        for naam, tekst, titel in (("chat-nlbe", v["nl"], "💬 Vraag van de week"), ("chat-en", v["en"], "💬 Question of the week")):
-            ch = self.bot.kanaal(naam)
-            if ch:
-                await ch.send(embed=self.bot.embed("community", titel, f"**{tekst}**"))
+        ch = self.bot.kanaal("chat")
+        if ch:
+            await ch.send(embed=self.bot.embed("community", "💬  Vraag van de week", f"**{v}**\n\nWe zijn benieuwd naar je antwoord!"))
 
     async def pack_avond_event(self, nu: dt.datetime) -> None:
         """Maakt op maandag het Discord-event voor de pack-avond van zondag 20:00."""
@@ -168,7 +162,7 @@ class Community(commands.Cog):
         await g.create_scheduled_event(
             name="Pack-avond 📦", start_time=zondag, entity_type=soort, channel=stage,
             privacy_level=discord.PrivacyLevel.guild_only,
-            description="Samen packs openen! Iedereen opent zijn eigen packs. Neem gerust een vriend mee. / Open packs together!",
+            description="Samen packs openen! Iedereen opent zijn eigen packs. Neem gerust een vriend mee.",
         )
 
     async def pull_van_de_week(self, nu: dt.datetime) -> None:
@@ -192,8 +186,7 @@ class Community(commands.Cog):
                 await beste.author.add_roles(rol, reason="Pull van de Week")
         e = self.bot.embed(
             "community", "⭐ Pull van de Week",
-            f"Gefeliciteerd {beste.author.mention}! Jouw pull kreeg **{beste_sterren} sterren**. [Bekijk de pull]({beste.jump_url})\n"
-            "🇬🇧 Congratulations, you won Pull of the Week!",
+            f"Gefeliciteerd {beste.author.mention}! 🎉\n\nJouw pull kreeg **{beste_sterren} sterren**.\n[Bekijk de pull]({beste.jump_url})",
         )
         if beste.attachments:
             e.set_image(url=beste.attachments[0].url)

@@ -5,7 +5,7 @@
 #
 # zichtbaar:
 #   iedereen  -> ook nieuwe leden zonder rol
-#   taal      -> leden met NL/BE of EN
+#   taal      -> leden die binnen zijn (rol Lid, via de knop "Kom binnen")
 #   [rollen]  -> alleen die rollen
 # schrijvers: rollen die mogen posten in een alleen-lezen-kanaal (opent het kanaal niet).
 # vroeg: true -> het kanaal wordt al in stap 0 aangemaakt (nodig voor Community-modus);
@@ -20,7 +20,7 @@ server:
   regelkanaal: regels
   updatekanaal: staff-logs       # Discord stuurt hier community-meldingen naartoe
 
-taalrollen: [NL/BE, EN]
+taalrollen: [Lid]   # wie binnen is; de naam "taalrollen" is historisch
 staffrollen: [Admin, Mod]
 
 # Volgorde = hiërarchie, van hoog naar laag (onder de botrol).
@@ -46,8 +46,7 @@ rollen:
   - { naam: Nieuwe Trainer }                           # level 1
   - { naam: Wegwijs }
   - { naam: Beginner }
-  - { naam: NL/BE }
-  - { naam: EN }
+  - { naam: Lid }
   - { naam: Sealed }
   - { naam: Singles }
   - { naam: Japans }
@@ -71,61 +70,66 @@ marktrollen: &markt [Trainer, Ace Trainer, Gym Leader, Haven Legende]
 losse_kanalen:
   - { naam: Leden, stap: 0, zichtbaar: iedereen, type: teller }   # wordt "📊 Leden: 742"
 
+# Oude namen die worden hernoemd (zo blijven leden en berichten behouden).
+hernoemen:
+  rollen: { "NL/BE": Lid }
+  categorieen: { "🇳🇱🇧🇪 NEDERLAND & BELGIË": "💬 CHAT & HANDEL" }
+  kanalen: { chat-nlbe: chat, "Lounge NL/BE": Lounge }
+
+# Wat expliciet wordt opgeruimd. Het script verwijdert NOOIT iets wat hier niet staat.
+verwijderen:
+  kanalen: [chat-en, trade-en, help-en, Lounge EN, general, General]
+  categorieen: ["🇬🇧 ENGLISH"]
+  rollen: [EN]
+
 # Volgorde = volgorde in Discord, van boven naar beneden.
 categorieen:
   - naam: "📌 START"
     kanalen:
-      - { naam: start-hier,     stap: 1, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "Welkom bij PokeTCG Haven • Begin hier / Start here" }
-      - { naam: regels,         stap: 2, vroeg: true, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "Regels met uitleg / Rules explained" }
+      - { naam: start-hier,     stap: 1, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "Welkom bij PokeTCG Haven • begin hier" }
+      - { naam: regels,         stap: 2, vroeg: true, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "De huisregels, met uitleg waarom" }
       - { naam: server-tour,    stap: 3, zichtbaar: taal, alleen_lezen: true, onderwerp: "Jouw route door de server • /tour" }
-      - { naam: aankondigingen, stap: 4, zichtbaar: taal, alleen_lezen: true, type: news, onderwerp: "Nieuws en het weekritme / News and weekly rhythm" }
+      - { naam: aankondigingen, stap: 4, zichtbaar: taal, alleen_lezen: true, type: news, onderwerp: "Nieuws, events en het weekritme" }
       - { naam: rollen,         stap: 5, zichtbaar: taal, alleen_lezen: true, onderwerp: "Kies je pings, regio en interesses" }
 
   - naam: "🧡 COMMUNITY"
     kanalen:
-      - { naam: voorstellen, stap: 6, zichtbaar: taal, slowmode: 30, onderwerp: "Stel je voor! / Introduce yourself!" }
+      - { naam: voorstellen, stap: 6, zichtbaar: taal, slowmode: 30, onderwerp: "Stel je voor aan de community" }
       - { naam: pulls,       stap: 7, zichtbaar: taal, onderwerp: "Alleen foto's en video's van je pulls • stem met ⭐" }
       - { naam: collecties,  stap: 8, zichtbaar: taal, type: forum, tags: [Binder, Sealed, Graded, Japans], onderwerp: "Eén post per lid voor je collectie • Binder Monday" }
-      - { naam: giveaways,   stap: 9, zichtbaar: taal, alleen_lezen: true, onderwerp: "Mijlpaal-giveaways • gratis meedoen / free to enter" }
+      - { naam: giveaways,   stap: 9, zichtbaar: taal, alleen_lezen: true, onderwerp: "Mijlpaal-giveaways • meedoen is altijd gratis" }
 
-  - naam: "🇳🇱🇧🇪 NEDERLAND & BELGIË"
+  - naam: "💬 CHAT & HANDEL"
     kanalen:
-      - { naam: chat-nlbe,       stap: 10, zichtbaar: [NL/BE], slowmode: 3 }
-      - { naam: Lounge NL/BE,    stap: 10, zichtbaar: [NL/BE], type: voice }
-      - { naam: ruilen-verkopen, stap: 11, zichtbaar: [NL/BE], type: forum, alleen_lezen: true, schrijvers: *markt, tags: [Te koop, Gezocht, Ruil], onderwerp: "Veilig handelen vanaf level 5 • gebruik /vouch" }
-      - { naam: vragen-hulp,     stap: 12, zichtbaar: [NL/BE], type: forum, tags: [Waarde, Echt of nep, Beginner, Opgelost] }
-      - { naam: winkel-radar,    stap: 13, zichtbaar: [NL/BE], alleen_lezen: true, onderwerp: "Meld voorraad in een winkel met /meld" }
-
-  - naam: "🇬🇧 ENGLISH"
-    kanalen:
-      - { naam: chat-en,   stap: 14, zichtbaar: [EN], slowmode: 3 }
-      - { naam: Lounge EN, stap: 14, zichtbaar: [EN], type: voice }
-      - { naam: trade-en,  stap: 15, zichtbaar: [EN], type: forum, alleen_lezen: true, schrijvers: *markt, tags: [For sale, Wanted, Trade], onderwerp: "Trade safely from level 5 • use /vouch" }
-      - { naam: help-en,   stap: 16, zichtbaar: [EN], type: forum, tags: [Value, Real or fake, Beginner, Solved] }
+      - { naam: chat,            stap: 10, zichtbaar: taal, slowmode: 3, onderwerp: "De huiskamer van PokeTCG Haven" }
+      - { naam: Lounge,          stap: 10, zichtbaar: taal, type: voice }
+      - { naam: ruilen-verkopen, stap: 11, zichtbaar: taal, type: forum, alleen_lezen: true, schrijvers: *markt, tags: [Te koop, Gezocht, Ruil], onderwerp: "Veilig handelen vanaf level 5 • gebruik /vouch" }
+      - { naam: vragen-hulp,     stap: 12, zichtbaar: taal, type: forum, tags: [Waarde, Echt of nep, Beginner, Opgelost] }
+      - { naam: winkel-radar,    stap: 13, zichtbaar: taal, alleen_lezen: true, onderwerp: "Meld voorraad in een winkel met /meld" }
 
   - naam: "📅 RELEASES"
     kanalen:
-      - { naam: release-kalender, stap: 17, zichtbaar: taal, alleen_lezen: true, onderwerp: "Alle releases met datum, tijd en limieten" }
-      - { naam: Releaseavond,     stap: 17, zichtbaar: taal, type: stage }
-      - { naam: restocks,         stap: 18, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gratis alerts (10 min vertraagd) • affiliate-links zijn gelabeld" }
-      - { naam: success,          stap: 19, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gescoord! Successen van leden" }
+      - { naam: release-kalender, stap: 14, zichtbaar: taal, alleen_lezen: true, onderwerp: "Alle releases met datum, tijd en limieten" }
+      - { naam: Releaseavond,     stap: 14, zichtbaar: taal, type: stage }
+      - { naam: restocks,         stap: 15, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gratis alerts (10 min vertraagd) • affiliate-links zijn gelabeld" }
+      - { naam: success,          stap: 16, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gescoord! Successen van leden" }
 
   - naam: "🛒 POKETCG HAVEN STORE"
     kanalen:
-      - { naam: store, stap: 20, zichtbaar: taal, alleen_lezen: true, onderwerp: "De etalage • de community blijft altijd gratis" }
+      - { naam: store, stap: 17, zichtbaar: taal, alleen_lezen: true, onderwerp: "De etalage • de community blijft altijd gratis" }
 
   - naam: "💎 PREMIUM"
     kanalen:
-      - { naam: sniper-nlbe,  stap: 21, zichtbaar: [Sniper, Sniper Proef, Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor NL/BE-winkels" }
-      - { naam: sniper-eu,    stap: 22, zichtbaar: [Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor DE/FR-winkels" }
-      - { naam: elite-lounge, stap: 23, zichtbaar: [Elite, Founder] }
-      - { naam: group-buys,   stap: 24, zichtbaar: [Elite, Founder], type: forum, tags: [Open, Vol, Afgerond] }
-      - { naam: grading,      stap: 25, zichtbaar: [Elite, Founder] }
+      - { naam: sniper-nlbe,  stap: 18, zichtbaar: [Sniper, Sniper Proef, Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor NL/BE-winkels" }
+      - { naam: sniper-eu,    stap: 19, zichtbaar: [Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor DE/FR-winkels" }
+      - { naam: elite-lounge, stap: 20, zichtbaar: [Elite, Founder] }
+      - { naam: group-buys,   stap: 21, zichtbaar: [Elite, Founder], type: forum, tags: [Open, Vol, Afgerond] }
+      - { naam: grading,      stap: 22, zichtbaar: [Elite, Founder] }
 
   - naam: "🛟 SUPPORT & PARTNERS"
     kanalen:
-      - { naam: winkel-partners, stap: 26, zichtbaar: taal, alleen_lezen: true, schrijvers: [Haven Partner], onderwerp: "Restocks en events van partnerwinkels" }
-      - { naam: tickets,         stap: 27, zichtbaar: taal, alleen_lezen: true, onderwerp: "Open een ticket / Open a ticket" }
+      - { naam: winkel-partners, stap: 23, zichtbaar: taal, alleen_lezen: true, schrijvers: [Haven Partner], onderwerp: "Restocks en events van partnerwinkels" }
+      - { naam: tickets,         stap: 24, zichtbaar: taal, alleen_lezen: true, onderwerp: "Open een ticket, we helpen je graag" }
 
   - naam: "🔒 STAFF"
     kanalen:

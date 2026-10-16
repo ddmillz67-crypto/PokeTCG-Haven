@@ -105,6 +105,9 @@ class Inrichter:
         # Kanalen die deze run heeft aangemaakt. De cache van discord.py loopt soms achter,
         # en zonder deze lijst zou een tweede ronde een kanaal dubbel kunnen aanmaken.
         self.aangemaakt: dict[str, discord.abc.GuildChannel] = {}
+        # Wat deze run hernoemde, om dezelfde reden: de cache kent de nieuwe naam misschien nog niet.
+        self.hernoemde_rollen: dict[str, discord.Role] = {}
+        self.hernoemde_categorieen: dict[str, discord.CategoryChannel] = {}
 
     # -- hulpfuncties -------------------------------------------------------
 
@@ -151,8 +154,55 @@ class Inrichter:
         if anders and self.wijzig(f"serverinstellingen: {', '.join(f'{k}={v.name}' for k, v in anders.items())}"):
             await self.guild.edit(**anders, reason="PokeTCG Haven setup")
 
+    async def hernoemen(self) -> None:
+        """Hernoemt oude rollen, categorieën en kanalen, zodat leden, rechten en berichten blijven."""
+        h = self.config.hernoemen
+        for oud, nieuw in h.get("rollen", {}).items():
+            rol = discord.utils.get(self.guild.roles, name=oud)
+            if rol and not discord.utils.get(self.guild.roles, name=nieuw):
+                if rol >= self.guild.me.top_role:
+                    self.waarschuw(f"rol {oud} staat boven de bot en kan niet hernoemd worden")
+                elif self.wijzig(f"rol hernoemen: {oud} -> {nieuw}"):
+                    self.hernoemde_rollen[nieuw] = await rol.edit(name=nieuw, reason="PokeTCG Haven setup") or rol
+        for soort in ("categorieen", "kanalen"):
+            for oud, nieuw in h.get(soort, {}).items():
+                ch = discord.utils.find(lambda c: c.name == oud and isinstance(c, discord.CategoryChannel) == (soort == "categorieen"), self.guild.channels)
+                bestaat = discord.utils.find(lambda c: c.name == nieuw and isinstance(c, discord.CategoryChannel) == (soort == "categorieen"), self.guild.channels)
+                if ch and not bestaat and self.wijzig(f"{'categorie' if soort == 'categorieen' else 'kanaal'} hernoemen: {oud} -> {nieuw}"):
+                    nieuw_ch = await ch.edit(name=nieuw, reason="PokeTCG Haven setup") or ch
+                    if soort == "categorieen":
+                        self.hernoemde_categorieen[nieuw] = nieuw_ch
+                    else:
+                        self.aangemaakt[nieuw] = nieuw_ch
+
+    async def opruimen(self) -> None:
+        """Verwijdert alleen wat expliciet onder 'verwijderen' in de config staat."""
+        v = self.config.verwijderen
+        for naam in v.get("kanalen", []):
+            for ch in [c for c in self.guild.channels if c.name == naam and not isinstance(c, discord.CategoryChannel)]:
+                if self.wijzig(f"kanaal verwijderen: {naam}"):
+                    try:
+                        await ch.delete(reason="PokeTCG Haven setup: staat niet meer in het plan")
+                    except discord.HTTPException as fout:
+                        self.waarschuw(f"kanaal {naam} verwijderen mislukt ({fout.status}: {fout.text})")
+        for naam in v.get("categorieen", []):
+            for cat in [c for c in self.guild.categories if c.name == naam]:
+                over = [c for c in self.guild.channels if getattr(c, "category_id", None) == cat.id and c.name not in v.get("kanalen", [])]
+                if over:
+                    self.waarschuw(f"categorie {naam} niet verwijderd: er staan nog kanalen in ({', '.join(c.name for c in over)})")
+                elif self.wijzig(f"categorie verwijderen: {naam}"):
+                    await cat.delete(reason="PokeTCG Haven setup: staat niet meer in het plan")
+        for naam in v.get("rollen", []):
+            rol = discord.utils.get(self.guild.roles, name=naam)
+            if rol is None:
+                continue
+            if rol >= self.guild.me.top_role:
+                self.waarschuw(f"rol {naam} staat boven de bot en kan niet verwijderd worden")
+            elif self.wijzig(f"rol verwijderen: {naam}"):
+                await rol.delete(reason="PokeTCG Haven setup: staat niet meer in het plan")
+
     async def rollen_inrichten(self) -> None:
-        bestaand = {r.name: r for r in self.guild.roles}
+        bestaand = {r.name: r for r in self.guild.roles} | self.hernoemde_rollen
         for rol in self.config.rollen:
             rechten = discord.Permissions(**{p: True for p in rol.rechten})
             kleur = discord.Colour(rol.kleur)
@@ -208,7 +258,7 @@ class Inrichter:
             await self.guild.edit_role_positions(positions=posities, reason="PokeTCG Haven setup")
 
     async def categorieen_inrichten(self) -> dict[str, discord.CategoryChannel]:
-        bestaand = {c.name: c for c in self.guild.categories}
+        bestaand = {c.name: c for c in self.guild.categories} | self.hernoemde_categorieen
         result: dict[str, discord.CategoryChannel] = {}
         for naam in self.config.categorieen_tot_stap(self.tot_stap):
             gewenst = self.overwrites(categorie_rechten(self.config, naam))
@@ -550,12 +600,14 @@ class Inrichter:
         if not self.guild.me.guild_permissions.administrator:
             self.waarschuw("de bot heeft geen Administrator-recht; sommige stappen kunnen mislukken")
         await self.server_instellingen()
+        await self.hernoemen()
         await self.rollen_inrichten()
         categorieen = await self.categorieen_inrichten()
         await self.kanalen_inrichten(categorieen, alleen_basis=True)
         await self.community_aanzetten()
         await self.kanalen_inrichten(categorieen)
         await self.automod_inrichten()
+        await self.opruimen()
         await self.categorieen_ordenen(categorieen)
         await self.kanalen_ordenen(categorieen)
         await self.berichten_inrichten()

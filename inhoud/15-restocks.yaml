@@ -1,0 +1,19 @@
+kanaal: restocks
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: restocks
+        soort: alert
+      - soort: alert
+        titel: "📦  Gratis restock-alerts"
+        beschrijving: |
+          Is een product **weer op voorraad** bij een Nederlandse of Belgische winkel? Dan zie je het hier.
+
+          Gratis alerts komen **10 minuten** nadat **Haven Sniper**-leden ze kregen. Kies **Restocks** in {#rollen} voor een melding.
+        velden:
+          - naam: "🔗  Over de links"
+            waarde: "Sommige winkellinks zijn **affiliate-links**. Koop je via zo'n link, dan krijgen wij een kleine vergoeding van de winkel.\nJij betaalt **niets extra**, en het helpt de giveaways te betalen. Zulke links zijn altijd gelabeld.\n​"
+          - naam: "⚡  Sneller?"
+            waarde: "Met **Haven Sniper** krijg je elke alert **direct**, plus persoonlijke meldingen."
+    knoppen:
+      - { label: "Bekijk Haven Sniper", emoji: "⚡", kanaal: store }

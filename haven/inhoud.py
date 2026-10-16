@@ -6,12 +6,16 @@ Teksten kunnen verwijzingen bevatten die bij het plaatsen worden ingevuld:
     {@Haven Helper}    -> een vermelding van de rol Haven Helper
     {link:#store}      -> de URL van #store (voor linkknoppen)
     {env:WHOP_SNIPER}  -> een waarde uit de omgeving (bijvoorbeeld een Whop-link)
+    {afbeelding:pulls} -> de URL van inhoud/afbeeldingen/pulls.png
+
+Een embed met alleen `banner: <naam>` wordt een beeldbanner zonder tekst.
 
 Dit bestand is puur: geen verbinding met Discord nodig, zodat alles offline te testen is.
 """
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 from dataclasses import dataclass, field
@@ -24,11 +28,14 @@ from haven.config import ServerConfig
 from haven.huisstijl import FOOTER, KLEUREN
 
 INHOUD_MAP = Path(__file__).resolve().parent.parent / "inhoud"
+AFBEELDINGEN = INHOUD_MAP / "afbeeldingen"
+# De repo is openbaar, dus Discord kan de beelden rechtstreeks van GitHub laden.
+STANDAARD_AFBEELDINGEN_URL = "https://raw.githubusercontent.com/ddmillz67-crypto/PokeTCG-Haven/main/inhoud/afbeeldingen/"
 PREFIX = "haven:"
 
 # Alle knop- en menu-acties die de Haven-bot afhandelt. Een onbekende actie is een fout.
 ACTIES = {
-    "taal:nlbe", "taal:en",
+    "binnen",
     "tour:start", "tour:kwijt",
     "regels:vraag",
     "rollen:interesses", "rollen:regio", "rollen:pings",
@@ -44,7 +51,7 @@ STIJLEN = {
     "rood": discord.ButtonStyle.danger,
 }
 
-VERWIJZING = re.compile(r"\{(#|@|link:#|env:)([^{}]+)\}")
+VERWIJZING = re.compile(r"\{(#|@|link:#|env:|afbeelding:)([^{}]+)\}")
 
 
 class InhoudFout(ValueError):
@@ -150,10 +157,18 @@ def laad_yaml(naam: str, map_: Path = INHOUD_MAP) -> dict:
     return yaml.safe_load((map_ / naam).read_text(encoding="utf-8"))
 
 
+def afbeelding_url(naam: str, env: dict | None = None) -> str:
+    """URL van een beeld, met een versie erachter zodat Discord een nieuw beeld ook echt ophaalt."""
+    basis = (env or os.environ).get("AFBEELDINGEN_URL") or STANDAARD_AFBEELDINGEN_URL
+    pad = AFBEELDINGEN / f"{naam}.png"
+    versie = hashlib.sha1(pad.read_bytes()).hexdigest()[:8] if pad.exists() else "0"
+    return f"{basis.rstrip('/')}/{naam}.png?v={versie}"
+
+
 def _teksten(bericht: Bericht) -> list[str]:
     teksten: list[str] = []
     for e in bericht.embeds:
-        teksten += [e.get("titel", ""), e.get("beschrijving", "")]
+        teksten += [e.get("titel", ""), e.get("beschrijving", ""), e.get("afbeelding", ""), e.get("thumbnail", "")]
         for v in e.get("velden", ()):
             teksten += [v["naam"], v["waarde"]]
     for k in bericht.knoppen:
@@ -190,6 +205,10 @@ def _controleer_bericht(b: Bericht, waar: str, kanalen: dict, rollen: set[str]) 
         raise InhoudFout(f"{waar}: maximaal 10 embeds per bericht")
     totaal = 0
     for e in b.embeds:
+        if "banner" in e:
+            if not (AFBEELDINGEN / f"{e['banner']}.png").exists():
+                raise InhoudFout(f"{waar}: banner '{e['banner']}' bestaat niet in inhoud/afbeeldingen")
+            continue
         if e.get("soort", "merk") not in KLEUREN:
             raise InhoudFout(f"{waar}: onbekende soort '{e.get('soort')}'")
         titel, beschrijving = e.get("titel", ""), e.get("beschrijving", "")
@@ -232,6 +251,8 @@ def _controleer_bericht(b: Bericht, waar: str, kanalen: dict, rollen: set[str]) 
                 raise InhoudFout(f"{waar}: verwijzing naar onbekend kanaal '{naam}'")
             if soort == "@" and naam not in rollen:
                 raise InhoudFout(f"{waar}: verwijzing naar onbekende rol '{naam}'")
+            if soort == "afbeelding:" and not (AFBEELDINGEN / f"{naam}.png").exists():
+                raise InhoudFout(f"{waar}: afbeelding '{naam}' bestaat niet")
 
 
 # -- invullen en bouwen -------------------------------------------------------
@@ -248,6 +269,8 @@ def vul_in(tekst: str, ctx: Context) -> str:
             if naam in ctx.kanalen and ctx.guild_id:
                 return f"https://discord.com/channels/{ctx.guild_id}/{ctx.kanalen[naam]}"
             return ""
+        if soort == "afbeelding:":
+            return afbeelding_url(naam, ctx.env)
         return ctx.env.get(naam, "")
 
     return VERWIJZING.sub(vervang, tekst)
@@ -256,12 +279,17 @@ def vul_in(tekst: str, ctx: Context) -> str:
 def bouw_embeds(bericht: Bericht, ctx: Context) -> list[discord.Embed]:
     embeds = []
     for e in bericht.embeds:
+        if "banner" in e:
+            banner = discord.Embed(colour=KLEUREN[e.get("soort", "merk")])
+            banner.set_image(url=afbeelding_url(e["banner"], ctx.env))
+            embeds.append(banner)
+            continue
         embed = discord.Embed(
             title=vul_in(e.get("titel", ""), ctx) or None,
             description=vul_in(e.get("beschrijving", ""), ctx).strip() or None,
             colour=KLEUREN[e.get("soort", "merk")],
         )
-        embed.set_author(name=e.get("auteur", "PokeTCG Haven"))
+        embed.set_author(name=e.get("auteur", "PokeTCG Haven"), icon_url=afbeelding_url("logo", ctx.env))
         embed.set_footer(text=e.get("footer", FOOTER))
         for v in e.get("velden", ()):
             embed.add_field(name=vul_in(v["naam"], ctx), value=vul_in(v["waarde"], ctx), inline=v.get("inline", False))
@@ -327,6 +355,7 @@ def embed_kern(e: dict) -> dict:
         "description": _s(e.get("description")),
         "color": e.get("color"),
         "author": _s((e.get("author") or {}).get("name")),
+        "author_icon": (e.get("author") or {}).get("icon_url"),
         "footer": _s((e.get("footer") or {}).get("text")),
         "fields": [(_s(f.get("name")), _s(f.get("value")), bool(f.get("inline"))) for f in e.get("fields", [])],
         "image": (e.get("image") or {}).get("url"),

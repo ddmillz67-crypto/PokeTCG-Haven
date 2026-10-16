@@ -13,7 +13,7 @@ import yaml
 
 KANAALTYPES = {"text", "news", "forum", "voice", "stage", "teller"}
 SPRAAKTYPES = {"voice", "stage", "teller"}
-MAX_STAP = 27
+MAX_STAP = 24
 TELLER_PREFIX = "📊 "
 HEX_KLEUR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -61,6 +61,8 @@ class ServerConfig:
     categorieen: list[str]
     kanalen: list[Kanaal]
     automod: dict = field(default_factory=dict)
+    hernoemen: dict = field(default_factory=dict)   # {"rollen"|"categorieen"|"kanalen": {oud: nieuw}}
+    verwijderen: dict = field(default_factory=dict)  # {"rollen"|"categorieen"|"kanalen": [naam, ...]}
 
     def kanalen_tot_stap(self, stap: int) -> list[Kanaal]:
         return [k for k in self.kanalen if k.stap <= stap or k.vroeg]
@@ -127,6 +129,8 @@ def laad_config(pad: str | Path) -> ServerConfig:
         categorieen=categorieen,
         kanalen=kanalen,
         automod=data.get("automod", {}),
+        hernoemen={k: dict(v or {}) for k, v in (data.get("hernoemen") or {}).items()},
+        verwijderen={k: list(v or []) for k, v in (data.get("verwijderen") or {}).items()},
     )
     controleer(config)
     return config
@@ -155,6 +159,20 @@ def controleer(config: ServerConfig) -> None:
                 raise ConfigFout(f"server.{sleutel}: '{naam}' moet een tekstkanaal zijn")
             if kanaal.stap != 0 and not kanaal.vroeg:
                 raise ConfigFout(f"server.{sleutel}: '{naam}' moet in stap 0 bestaan (stap: 0 of vroeg: true)")
+
+    soorten = {"rollen", "categorieen", "kanalen"}
+    for wat in (*config.hernoemen, *config.verwijderen):
+        if wat not in soorten:
+            raise ConfigFout(f"hernoemen/verwijderen: onbekende soort '{wat}' (kies uit {sorted(soorten)})")
+    gewenst = {"rollen": bekend, "categorieen": set(config.categorieen), "kanalen": {k.naam for k in config.kanalen}}
+    for wat, namen in config.verwijderen.items():
+        botsing = set(namen) & gewenst[wat]
+        if botsing:
+            raise ConfigFout(f"verwijderen: {sorted(botsing)} staat ook in het plan; dat zou elke run weggooien en opnieuw maken")
+    for wat, paren in config.hernoemen.items():
+        for oud, nieuw in paren.items():
+            if nieuw not in gewenst[wat]:
+                raise ConfigFout(f"hernoemen: '{oud}' -> '{nieuw}', maar '{nieuw}' staat niet in het plan")
 
     kanaalnamen = [k.naam for k in config.kanalen]
     dubbel = {n for n in kanaalnamen if kanaalnamen.count(n) > 1}

@@ -1,0 +1,17 @@
+kanaal: release-kalender
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: releases
+        soort: release
+      - soort: release
+        titel: "📅  Releasekalender Nederland & België"
+        beschrijving: |
+          Hier verschijnt **elke nieuwe release** met de **datum**, de **tijd**, de **winkels** en de **limiet per persoon**.
+
+          Kies **Releases** in {#rollen} om een melding te krijgen.
+        velden:
+          - naam: "🎉  Op de releasedag"
+            waarde: "Een **releasedraad** met tips: welke winkels vroeg uitpakken en hoe laat de rij begint.\n's Avonds is er een **watch-party** op de stage.\n​"
+          - naam: "❓  Mis je een release?"
+            waarde: "Laat het weten via een ticket in {#tickets}."

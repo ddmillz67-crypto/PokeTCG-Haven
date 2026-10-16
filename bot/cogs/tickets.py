@@ -11,7 +11,7 @@ from discord.ext import commands
 from bot.kern import PREFIX, HavenBot, antwoord
 
 CATEGORIEEN = {
-    "hulp": ("❓ Hulp", "Vertel waar je mee zit; een moderator helpt je zo snel mogelijk.\n🇬🇧 Tell us what's up; a moderator will help you soon."),
+    "hulp": ("❓ Hulp", "Vertel waar je mee zit; een moderator helpt je zo snel mogelijk."),
     "store": ("🛒 Store en betaling", "Vertel wat je gekocht hebt (of wilt kopen) en wat er niet lukt. Deel nooit wachtwoorden of betaalgegevens."),
     "melding": ("🚩 Melding", "Wat is er gebeurd, wie was erbij en in welk kanaal? Screenshots helpen. Alleen het team ziet dit."),
     "giveaway": ("🎁 Giveaway gewonnen", "Gefeliciteerd! Stuur je naam en verzendadres in NL of BE. Ben je jonger dan 18? Laat dan een ouder of voogd hier bevestigen dat het goed is. We verwijderen je adres na verzending."),
@@ -53,7 +53,7 @@ class Tickets(commands.Cog):
         )
         mod = self.bot.rol("Mod")
         view = discord.ui.View(timeout=None)
-        view.add_item(discord.ui.Button(label="Ticket sluiten / Close", emoji="🔒", style=discord.ButtonStyle.danger, custom_id=f"{PREFIX}ticket:sluit"))
+        view.add_item(discord.ui.Button(label="Ticket sluiten", emoji="🔒", style=discord.ButtonStyle.danger, custom_id=f"{PREFIX}ticket:sluit"))
         await thread.send(
             content=f"{lid.mention} {mod.mention if mod else ''}",
             embed=self.bot.embed("merk", titel, uitleg),

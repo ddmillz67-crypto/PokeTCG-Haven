@@ -11,8 +11,8 @@ from discord.ext import commands
 
 from bot.kern import HavenBot, antwoord
 
-MARKTEN = {"ruilen-verkopen", "trade-en"}
-HULP = {"vragen-hulp": "Opgelost", "help-en": "Solved"}
+MARKTEN = {"ruilen-verkopen"}
+HULP = {"vragen-hulp": "Opgelost"}
 VERIFIED_VOUCHES = 5
 
 
@@ -57,11 +57,11 @@ class Markt(commands.Cog):
         await lid.add_roles(rol, reason=f"Verified door {interaction.user}")
         await antwoord(interaction, f"✅ {lid.mention} is nu Verified Trader.")
 
-    @app_commands.command(name="opgelost", description="Markeer je vraag als opgelost / Mark your question as solved")
+    @app_commands.command(name="opgelost", description="Markeer je vraag als opgelost")
     async def opgelost(self, interaction: discord.Interaction) -> None:
         t = interaction.channel
         if not isinstance(t, discord.Thread) or getattr(t.parent, "name", "") not in HULP:
-            await antwoord(interaction, "Dit werkt alleen in een vraag in #vragen-hulp of #help-en.")
+            await antwoord(interaction, "Dit werkt alleen in een vraag in #vragen-hulp.")
             return
         if interaction.user.id != t.owner_id and not self.bot.is_team(interaction.user):
             await antwoord(interaction, "Alleen degene die de vraag stelde kan hem afsluiten.")
@@ -70,7 +70,7 @@ class Markt(commands.Cog):
         tags = list(t.applied_tags)
         if tag and tag not in tags:
             tags = (tags + [tag])[-5:]
-        await interaction.response.send_message("✅ Opgelost! Bedankt voor het helpen. / Solved, thanks!")
+        await interaction.response.send_message("✅ Opgelost! Bedankt voor het helpen.")
         await t.edit(applied_tags=tags, archived=True)
 
     @commands.Cog.listener()
@@ -89,11 +89,11 @@ class Markt(commands.Cog):
                 start = None
         if forum in MARKTEN:
             if start is None or not start.attachments:
-                await t.send(embed=self.bot.embed("regels", "📸 Foto's verplicht", "Een advertentie heeft foto's nodig (voor- en achterkant, met je naam en de datum ernaast). Maak een nieuwe post met foto's. / Photos are required."))
+                await t.send(embed=self.bot.embed("regels", "📸 Foto's verplicht", "Een advertentie heeft foto's nodig: voor- en achterkant, met je naam en de datum ernaast.\n\nMaak een nieuwe post met foto's."))
                 await t.edit(archived=True, locked=True)
                 return
             if not t.applied_tags:
-                await t.send(embed=self.bot.embed("regels", "🏷️ Tag vergeten", "Kies een tag (Te koop, Gezocht of Ruil) via de drie puntjes > Post bewerken. / Please add a tag."))
+                await t.send(embed=self.bot.embed("regels", "🏷️ Tag vergeten", "Kies een tag (**Te koop**, **Gezocht** of **Ruil**) via de drie puntjes > Post bewerken."))
         elif forum in HULP:
             if any(tag.name == "Beginner" for tag in t.applied_tags):
                 helper = self.bot.rol("Haven Helper")

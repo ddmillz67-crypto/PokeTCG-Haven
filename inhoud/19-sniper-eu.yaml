@@ -1,0 +1,12 @@
+kanaal: sniper-eu
+berichten:
+  - sleutel: kaart
+    embeds:
+      - banner: elite
+        soort: premium
+      - soort: premium
+        titel: "💎  Elite-alerts Duitsland & Frankrijk"
+        beschrijving: |
+          Restocks bij **Duitse en Franse winkels** die naar Nederland en België verzenden, **direct**.
+
+          > Let op de **verzendkosten** en de **levertijd**; die staan in de alert als de winkel ze vermeldt.

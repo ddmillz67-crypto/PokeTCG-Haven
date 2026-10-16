@@ -6,7 +6,7 @@ import datetime as dt
 
 import discord
 
-FOOTER = "PokeTCG Haven • NL/BE/EN"
+FOOTER = "PokeTCG Haven • Nederland & België"
 
 KLEUREN = {
     "merk": 0x1E6FD9,         # Haven-blauw: start-hier, aankondigingen
@@ -17,11 +17,6 @@ KLEUREN = {
     "regels": 0xE74C3C,       # rood: regels en waarschuwingen
     "community": 0xFF8A3D,    # warm oranje: welkom, felicitaties, Pull van de Week, kanaalkaarten
 }
-
-
-def tweetalig(nl: str, en: str) -> str:
-    """Nederlandse tekst bovenaan, Engelse tekst eronder met een vlag."""
-    return f"{nl}\n\n🇬🇧 {en}"
 
 
 def maak_embed(

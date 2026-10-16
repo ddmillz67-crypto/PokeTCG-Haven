@@ -2,15 +2,20 @@ kanaal: winkel-radar
 berichten:
   - sleutel: kaart
     embeds:
+      - banner: radar
+        soort: alert
       - soort: alert
-        titel: "📌 Over #winkel-radar"
-        beschrijving: "Samen zien we meer dan elke bot. Zie je Pokémon-kaarten in een winkel liggen? Meld het met `/meld`, dan weten verzamelaars in jouw regio het ook."
+        titel: "📌  Over #winkel-radar"
+        beschrijving: |
+          **Samen zien we meer dan elke bot.**
+
+          Zie je Pokémon-kaarten in een winkel liggen? Meld het met `/meld`, dan weten verzamelaars in jouw regio het ook.
         velden:
-          - naam: "Zo meld je"
-            waarde: "`/meld winkel plaats product regio` en voeg een foto toe. Je melding verschijnt hier met een ping voor jouw regio."
-          - naam: "Betrouwbaar blijven"
-            waarde: "Klopt een melding niet? Reageer met 👎. Bij 2 duimen omlaag verdwijnt hij. Wie vaak goed meldt, valt op en komt in de Hall of Fame."
-          - naam: "Gratis en Sniper"
-            waarde: "Meldingen verschijnen hier na 10 minuten. Leden met Haven Sniper zien ze direct in {#sniper-nlbe}."
-          - naam: "Pings voor jouw regio"
+          - naam: "📍  Zo meld je"
+            waarde: "`/meld` met de **winkel**, de **plaats**, het **product** en je **regio**, en voeg een **foto** toe.\nJe melding verschijnt hier met een ping voor jouw regio.\n​"
+          - naam: "👎  Betrouwbaar blijven"
+            waarde: "Klopt een melding niet? Reageer met 👎. Bij **2 duimen omlaag** verdwijnt hij.\nWie vaak goed meldt, komt in de **Hall of Fame**.\n​"
+          - naam: "⏱️  Gratis en Sniper"
+            waarde: "Meldingen verschijnen hier na **10 minuten**. Leden met **Haven Sniper** zien ze direct in {#sniper-nlbe}.\n​"
+          - naam: "🔔  Meldingen voor jouw regio"
             waarde: "Kies je regio in {#rollen}."

@@ -10,7 +10,7 @@ from haven.config import (
     kanaal_rechten,
     laad_config,
 )
-from haven.huisstijl import FOOTER, KLEUREN, kanaalkaart, maak_embed, tweetalig
+from haven.huisstijl import FOOTER, KLEUREN, kanaalkaart, maak_embed
 from scripts.setup_server import laad_env
 
 CONFIG = Path(__file__).resolve().parent.parent / "config" / "server.yaml"
@@ -29,10 +29,28 @@ def test_config_laadt_en_is_geldig(config):
     controleer(config)
 
 
-def test_stappenplan_heeft_27_tekstkanalen_buiten_staff(config):
+def test_stappenplan_heeft_24_tekstkanalen_buiten_staff(config):
     tekst = [k for k in config.kanalen if k.type in {"text", "news", "forum"} and k.naam != "staff-logs"]
-    assert len(tekst) == 27
-    assert sorted(k.stap for k in tekst) == list(range(1, 28))
+    assert len(tekst) == 24
+    assert sorted(k.stap for k in tekst) == list(range(1, 25))
+
+
+def test_geen_engelse_sectie_meer(config):
+    namen = {k.naam for k in config.kanalen} | set(config.categorieen) | {r.naam for r in config.rollen}
+    assert not namen & {"chat-en", "trade-en", "help-en", "Lounge EN", "🇬🇧 ENGLISH", "EN", "NL/BE"}
+    assert config.taalrollen == ("Lid",)
+
+
+def test_hernoemen_en_opruimen_zijn_veilig(config):
+    from dataclasses import replace
+
+    assert config.hernoemen["rollen"] == {"NL/BE": "Lid"}
+    assert "general" in config.verwijderen["kanalen"]
+    # Iets verwijderen wat ook in het plan staat, wordt geweigerd.
+    with pytest.raises(ConfigFout):
+        controleer(replace(config, verwijderen={"kanalen": ["chat"]}))
+    with pytest.raises(ConfigFout):
+        controleer(replace(config, hernoemen={"kanalen": {"oud": "bestaat-niet"}}))
 
 
 def test_stap_0_maakt_teller_regels_en_staff_logs(config):
@@ -47,8 +65,8 @@ def test_staff_categorie_staat_onderaan(config):
 
 
 def test_rollen_volgens_bouwplan(config):
-    # 37 eigen rollen (36 uit het Bouwplan plus Sniper Proef); met botrol en @everyone 39.
-    assert len(config.rollen) == 37
+    # 36 eigen rollen (NL/BE en EN zijn samen Lid geworden); met botrol en @everyone 38.
+    assert len(config.rollen) == 36
     apart = {r.naam for r in config.rollen if r.apart_tonen}
     assert apart == {"Admin", "Mod", "Haven Helper", "Creator", "Pull van de Week"}
     assert not {"Sniper", "Elite", "Founder"} & apart, "betaalde rollen horen niet apart in de ledenlijst"
@@ -64,15 +82,14 @@ def test_teller_naam_en_rechten(config):
 
 def test_markt_alleen_posten_vanaf_level_5(config):
     r = kanaal_rechten(config, kanaal(config, "ruilen-verkopen"))
-    assert r["NL/BE"]["view_channel"] is True and r["NL/BE"]["send_messages"] is False
+    assert r["Lid"]["view_channel"] is True and r["Lid"]["send_messages"] is False
     for rol in ("Trainer", "Ace Trainer", "Gym Leader", "Haven Legende"):
         assert r[rol] == {"send_messages": True}, "schrijvers mogen het kanaal niet openen"
     assert "Nieuwe Trainer" not in r
 
 
-def test_engelse_trainer_ziet_nl_markt_niet(config):
+def test_levelrol_opent_de_markt_niet_zonder_lid_te_zijn(config):
     r = kanaal_rechten(config, kanaal(config, "ruilen-verkopen"))
-    assert "EN" not in r
     assert "view_channel" not in r["Trainer"]
 
 
@@ -121,7 +138,7 @@ def test_start_hier_is_voor_iedereen_maar_alleen_lezen(config):
 def test_premium_is_verborgen_voor_gratis_leden(config):
     r = kanaal_rechten(config, kanaal(config, "sniper-nlbe"))
     assert r["@everyone"] == {"view_channel": False}
-    assert "NL/BE" not in r and "EN" not in r
+    assert "Lid" not in r
     assert r["Sniper"]["view_channel"] is True
     assert r["Sniper"]["send_messages"] is False
 
@@ -132,11 +149,10 @@ def test_sniper_ziet_eu_kanaal_niet(config):
     assert r["Elite"]["view_channel"] is True
 
 
-def test_taalsecties_zijn_gescheiden(config):
-    nl = kanaal_rechten(config, kanaal(config, "chat-nlbe"))
-    en = kanaal_rechten(config, kanaal(config, "chat-en"))
-    assert "EN" not in nl and nl["NL/BE"]["view_channel"]
-    assert "NL/BE" not in en and en["EN"]["view_channel"]
+def test_community_alleen_voor_wie_binnen_is(config):
+    r = kanaal_rechten(config, kanaal(config, "chat"))
+    assert r["@everyone"] == {"view_channel": False}
+    assert r["Lid"]["view_channel"] is True
 
 
 def test_staff_ziet_en_schrijft_overal(config):
@@ -149,7 +165,7 @@ def test_staff_ziet_en_schrijft_overal(config):
 def test_partner_mag_posten_in_winkel_partners(config):
     r = kanaal_rechten(config, kanaal(config, "winkel-partners"))
     assert r["Haven Partner"] == {"send_messages": True}
-    assert r["NL/BE"]["send_messages"] is False
+    assert r["Lid"]["send_messages"] is False
 
 
 def test_voice_alleen_lezen_gebruikt_connect(config):
@@ -165,7 +181,7 @@ def test_categorie_premium_verborgen_voor_iedereen(config):
     r = categorie_rechten(config, "💎 PREMIUM")
     assert r["@everyone"] == {"view_channel": False}
     assert r["Sniper"]["view_channel"] is True
-    assert "NL/BE" not in r and "EN" not in r
+    assert "Lid" not in r
 
 
 def test_onbekende_rol_geeft_fout(config):
@@ -179,16 +195,15 @@ def test_onbekende_rol_geeft_fout(config):
 def test_tags_alleen_op_forum(config):
     from dataclasses import replace
 
-    fout = replace(config, kanalen=[replace(kanaal(config, "chat-nlbe"), tags=("x",))])
+    fout = replace(config, kanalen=[replace(kanaal(config, "chat"), tags=("x",))])
     with pytest.raises(ConfigFout):
         controleer(fout)
 
 
 def test_huisstijl_embed():
-    e = maak_embed("alert", "Op voorraad", tweetalig("Nu leverbaar.", "In stock."))
+    e = maak_embed("alert", "Op voorraad", "Nu leverbaar.")
     assert e.colour.value == KLEUREN["alert"] == 3066993
-    assert e.footer.text == FOOTER
-    assert "🇬🇧 In stock." in e.description
+    assert e.footer.text == FOOTER == "PokeTCG Haven • Nederland & België"
     with pytest.raises(ValueError):
         maak_embed("onbekend", "x", "y")
 

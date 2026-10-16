@@ -16,7 +16,7 @@ from discord.ext import commands
 from bot.db import Database
 from haven.config import ServerConfig
 from haven.huisstijl import FOOTER, KLEUREN
-from haven.inhoud import PREFIX, Context, KanaalInhoud, vul_in
+from haven.inhoud import PREFIX, Context, KanaalInhoud, afbeelding_url, vul_in
 
 log = logging.getLogger("haven")
 TIJDZONE = ZoneInfo("Europe/Amsterdam")
@@ -95,7 +95,7 @@ class HavenBot(commands.Bot):
 
     def embed(self, soort: str, titel: str, beschrijving: str = "") -> discord.Embed:
         e = discord.Embed(title=titel[:256], description=self.tekst(beschrijving)[:4096] or None, colour=KLEUREN[soort])
-        e.set_author(name="PokeTCG Haven")
+        e.set_author(name="PokeTCG Haven", icon_url=afbeelding_url("logo"))
         e.set_footer(text=FOOTER)
         return e
 

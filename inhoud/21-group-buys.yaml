@@ -1,0 +1,18 @@
+kanaal: group-buys
+berichten:
+  - sleutel: kaart
+    post_titel: "📌 Zo werken group buys"
+    embeds:
+      - banner: groupbuys
+        soort: premium
+      - soort: premium
+        titel: "📦  Group buys"
+        beschrijving: |
+          **Samen inkopen tegen kostprijs** plus een kleine marge, bijvoorbeeld Japanse boxen.
+
+          Elke actie is een eigen post met de tag **Open**, **Vol** of **Afgerond**.
+        velden:
+          - naam: "🗓️  Wanneer?"
+            waarde: "Group buys starten in **fase 2**, als alles goed geregeld is: KvK, verzekering en vaste afspraken.\n​"
+          - naam: "⭐  Voorrang"
+            waarde: "**Elite- en Founder-leden** schrijven als eerste in. Het maximum staat in elke actie."

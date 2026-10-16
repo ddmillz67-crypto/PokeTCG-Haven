@@ -37,7 +37,7 @@ class Rollen(commands.Cog):
         if eraf:
             await lid.remove_roles(*eraf, reason="Uitgezet in #rollen")
         nu = ", ".join(sorted(gekozen)) or "niets"
-        await antwoord(interaction, f"✅ Opgeslagen. Je hebt nu: **{nu}**.\n🇬🇧 Saved.")
+        await antwoord(interaction, f"✅ Opgeslagen! Je hebt nu: **{nu}**.")
 
 
 async def setup(bot: HavenBot) -> None:

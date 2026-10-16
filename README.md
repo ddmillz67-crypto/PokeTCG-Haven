@@ -1,6 +1,6 @@
 # PokeTCG Haven
 
-De Haven-bot en de serverinrichting voor **PokeTCG Haven**, de Nederlands-Belgische Pokémon TCG-community op Discord met een aparte Engelse sectie.
+De Haven-bot en de serverinrichting voor **PokeTCG Haven**, de Nederlands-Belgische Pokémon TCG-community op Discord. Alles is in het Nederlands.
 
 Het volledige bouwplan (structuur, community, giveaways, Store, marketing, rollen en regels) staat in het [Bouwplan PokeTCG Haven](https://claude.ai/code/artifact/f8d07991-0b36-4c44-86cc-2563eb4bf05e).
 
@@ -19,7 +19,7 @@ Eén programma, de **Haven-bot**, doet twee dingen:
 
 | Onderdeel | Wat het doet |
 | --- | --- |
-| Start | Taalkeuze NL/BE of EN met knoppen, en Nieuwe Trainer voor nieuwe leden |
+| Start | De knop **Kom binnen** (geeft de rol Lid en opent de server) en Nieuwe Trainer voor nieuwe leden |
 | Tour | Persoonlijke tour van 7 schermen, `/tour`, de rol Wegwijs en een welkom in #voorstellen |
 | Rollen | Menu's voor interesses, regio en meldingen |
 | Tickets | Privégesprekken in #tickets, met een transcript in #staff-logs bij het sluiten |
@@ -39,6 +39,16 @@ Eén programma, de **Haven-bot**, doet twee dingen:
 - **Discord Onboarding:** die stel je zelf in Discord in na stap 9.
 - **Whop:** koppel je zelf met de Discord-rollen Sniper, Elite en Founder.
 
+## Beelden
+
+Elk kanaal begint met een banner in de huisstijl, en elke embed toont het PH-logo. Je kunt `inhoud/afbeeldingen/logo.png` ook als **servericoon** en als **avatar van de bot** gebruiken (Developer Portal → Bot → Icon).
+
+Een banner aanpassen: wijzig de tekst in `scripts/banners.py`, draai `python -m scripts.banners` en push. De bot ziet dat het beeld veranderd is en werkt het bericht bij.
+
+## Hernoemen en opruimen
+
+Onder `hernoemen` in `config/server.yaml` staan oude namen die de bot hernoemt; zo houden leden hun rol en blijven berichten staan. Onder `verwijderen` staat wat de bot opruimt. **De bot verwijdert nooit iets wat daar niet staat**, en de config weigert iets te verwijderen wat ook in het plan staat.
+
 ## Draaien op Railway
 
 `railway.json` start de bot met `python -m bot` en herstart hem na een fout.
@@ -49,7 +59,7 @@ Eén programma, de **Haven-bot**, doet twee dingen:
 | --- | --- |
 | `DISCORD_TOKEN` | het bot-token |
 | `DISCORD_GUILD_ID` | de server-ID |
-| `SETUP_TOT_STAP` | tot en met welke stap de bot bouwt: `0` tot en met `27` |
+| `SETUP_TOT_STAP` | tot en met welke stap de bot bouwt: `0` tot en met `24` |
 | `SETUP_DRY_RUN` | `1` = alleen laten zien wat er zou veranderen (standaard), `0` = echt uitvoeren |
 | `DATA_DIR` | `/data` (zie het volume hieronder) |
 | `WHOP_SNIPER_URL`, `WHOP_FOUNDER_URL`, `WHOP_ELITE_URL` | de Whop-links; leeg betekent dat de knop "binnenkort" toont |
@@ -71,11 +81,12 @@ Eén programma, de **Haven-bot**, doet twee dingen:
 | Map | Inhoud |
 | --- | --- |
 | `config/server.yaml` | Rollen, kanalen (met stapnummer), rechten en AutoMod |
-| `inhoud/` | Een bestand per kanaal met embeds, knoppen en menu's (NL/EN), plus de tour, de Store-teksten en de vragen van de week |
+| `inhoud/` | Een bestand per kanaal met embeds, knoppen en menu's, plus de tour, de Store-teksten en de vragen van de week |
+| `inhoud/afbeeldingen/` | De banners en het logo (gemaakt met `python -m scripts.banners`); Discord laadt ze via GitHub |
 | `haven/` | Logica zonder Discord-verbinding: config, inhoud, huisstijl, levels, giveaways, mijlpalen en alerts |
 | `bot/` | De Haven-bot: kern, database (SQLite) en een cog per onderdeel |
 | `scripts/setup_server.py` | De inrichting (wordt door de bot gebruikt; kan ook los draaien) |
-| `tests/` | 63 tests, waaronder stresstests tegen een nagebootste Discord-server |
+| `tests/` | 72 tests, waaronder stresstests tegen een nagebootste Discord-server |
 
 ## Lokaal ontwikkelen
 
