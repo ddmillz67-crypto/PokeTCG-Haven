@@ -12,7 +12,10 @@ from pathlib import Path
 import discord
 
 from haven.config import laad_config
+from haven.inhoud import laad_inhoud
 from scripts.setup_server import Inrichter
+
+INHOUD = laad_inhoud()
 
 CONFIG = Path(__file__).resolve().parent.parent / "config" / "server.yaml"
 _ids = itertools.count(1000)
@@ -60,6 +63,15 @@ class _NepBasis:
         self.slowmode_delay = slowmode_delay
         self.available_tags = list(tags)
         self.position = 0
+        self.berichten: list = []
+
+    @property
+    def available_tags(self):
+        return self._nep_tags
+
+    @available_tags.setter
+    def available_tags(self, waarde):
+        self._nep_tags = list(waarde)
 
     @property
     def overwrites(self):
@@ -81,12 +93,104 @@ class _NepBasis:
             setattr(self, k, v)
 
 
+class NepComponent:
+    def __init__(self, d):
+        self.d = d
+
+    def to_dict(self):
+        return self.d
+
+
+class NepBericht:
+    def __init__(self, kanaal, author, embeds, view=None, soort=discord.MessageType.default):
+        self.id = next(_ids)
+        self.kanaal, self.author, self.type = kanaal, author, soort
+        self.embeds = list(embeds or [])
+        self.components = [NepComponent(d) for d in view.to_components()] if view else []
+        self.pinned = False
+
+    async def edit(self, embeds=None, view=discord.utils.MISSING, **kw):
+        self.kanaal.server.api_calls += 1
+        if embeds is not None:
+            self.embeds = list(embeds)
+        if view is not discord.utils.MISSING:
+            self.components = [NepComponent(d) for d in view.to_components()] if view else []
+
+    async def pin(self, reason=None):
+        self.kanaal.server.api_calls += 1
+        self.pinned = True
+        # Discord plaatst een melding "heeft een bericht vastgezet".
+        self.kanaal.berichten.append(NepBericht(self.kanaal, self.author, [], soort=discord.MessageType.pins_add))
+
+    async def delete(self):
+        self.kanaal.server.api_calls += 1
+        self.kanaal.berichten.remove(self)
+
+
+class _Berichten:
+    async def send(self, content=None, embeds=None, embed=None, view=None, **kw):
+        self.server.api_calls += 1
+        m = NepBericht(self, self.server.me, embeds or ([embed] if embed else []), view)
+        self.berichten.append(m)
+        return m
+
+    async def pins(self):
+        return [m for m in reversed(self.berichten) if m.pinned]
+
+    async def history(self, limit=100):
+        for m in list(reversed(self.berichten))[:limit]:
+            yield m
+
+
+class NepThread:
+    def __init__(self, server, name, owner_id, embeds, view):
+        self.server = server
+        self.id = next(_ids)
+        self.name, self.owner_id = name, owner_id
+        self.archived = False
+        self.flags = type("Vlaggen", (), {"pinned": False})()
+        self.start = NepBericht(self, type("Auteur", (), {"id": owner_id})(), embeds, view)
+        self.start.id = self.id
+        self.berichten = [self.start]
+
+    async def fetch_message(self, bericht_id):
+        return self.start
+
+    async def edit(self, pinned=None, archived=None, **kw):
+        self.server.api_calls += 1
+        if pinned is not None:
+            self.flags.pinned = pinned
+        if archived is not None:
+            self.archived = archived
+
+
+class NepForum(_NepBasis, discord.ForumChannel):
+    def __init__(self, *a, **kw):
+        self._start(*a, **kw)
+        self._threads: list[NepThread] = []
+
+    @property
+    def threads(self):
+        return [t for t in self._threads if not t.archived]
+
+    async def archived_threads(self, limit=100):
+        for t in self._threads:
+            if t.archived:
+                yield t
+
+    async def create_thread(self, name, embeds=None, reason=None, view=None, **kw):
+        self.server.api_calls += 1
+        t = NepThread(self.server, name, self.server.me.id, embeds, view)
+        self._threads.append(t)
+        return type("MetBericht", (), {"thread": t, "message": t.start})()
+
+
 class NepKanaal(_NepBasis):
     def __init__(self, *a, **kw):
         self._start(*a, **kw)
 
 
-class NepTekstkanaal(_NepBasis, discord.TextChannel):
+class NepTekstkanaal(_Berichten, _NepBasis, discord.TextChannel):
     """Subklasse zodat isinstance(..., TextChannel) klopt, zoals bij Community-modus en AutoMod."""
 
     def __init__(self, *a, **kw):
@@ -124,6 +228,7 @@ class NepLid:
 
 class NepServer:
     def __init__(self, leden=1234):
+        self.id = next(_ids)
         self.default_role = NepRol("@everyone", 0)
         botrol = NepRol("PokeTCG Haven", 1, permissions=discord.Permissions(administrator=True))
         self.roles = [self.default_role, botrol]
@@ -187,7 +292,7 @@ class NepServer:
         return await self._kanaal(NepTekstkanaal, name, "news" if news else "text", category, overwrites, topic, slowmode_delay)
 
     async def create_forum(self, name, *, category, overwrites, reason, topic, slowmode_delay, available_tags):
-        return await self._kanaal(NepKanaal, name, "forum", category, overwrites, topic, slowmode_delay, available_tags)
+        return await self._kanaal(NepForum, name, "forum", category, overwrites, topic, slowmode_delay, available_tags)
 
     async def create_voice_channel(self, name, *, category, overwrites, reason):
         return await self._kanaal(NepKanaal, name, "voice", category, overwrites)
@@ -210,9 +315,9 @@ class NepServer:
         self.automod.append(name)
 
 
-def draai(server, stap, dry_run=False, config=None):
+def draai(server, stap, dry_run=False, config=None, inhoud=INHOUD):
     config = config or laad_config(CONFIG)
-    inrichter = Inrichter(server, config, stap, dry_run)
+    inrichter = Inrichter(server, config, stap, dry_run, inhoud)
     asyncio.run(inrichter.uitvoeren())
     return inrichter
 
@@ -224,7 +329,7 @@ def kanaal(server, naam):
 def test_stap_0_volgens_bouwplan():
     server = NepServer()
     eerste = draai(server, 0)
-    assert len([r for r in server.roles if r.name not in {"@everyone", "PokeTCG Haven"}]) == 36
+    assert len([r for r in server.roles if r.name not in {"@everyone", "PokeTCG Haven"}]) == 37
     assert [c.name for c in server.categories] == ["📌 START", "🔒 STAFF"]
     assert sorted(c.name for c in server.overige) == ["regels", "staff-logs", "📊 Leden: 1.234"]
     assert kanaal(server, "📊 Leden: 1.234").category_id is None, "de teller staat bovenaan, buiten een categorie"
@@ -353,3 +458,64 @@ def test_tekstkanaal_wordt_aankondigingskanaal_zodra_community_aan_staat():
     assert any("aankondigingen" in w and "type" in w for w in tweede.wijzigingen)
     # Een spraakkanaal kan geen stage worden: dat meldt het script eerlijk.
     assert any("Releaseavond" in w and "stage" in w for w in tweede.waarschuwingen)
+
+
+def eigen_vastgepind(kanaal, server):
+    return [m for m in kanaal.berichten if m.pinned and m.author.id == server.me.id]
+
+
+def test_volledige_build_plaatst_alle_inhoud():
+    server = NepServer()
+    resultaat = draai(server, 27)
+    assert resultaat.waarschuwingen == []
+    for naam, ki in INHOUD.items():
+        ch = kanaal(server, naam)
+        if isinstance(ch, NepForum):
+            posts = [t for t in ch._threads if t.name == ki.berichten[0].post_titel]
+            assert len(posts) == 1 and posts[0].flags.pinned, naam
+        else:
+            assert len(eigen_vastgepind(ch, server)) == len(ki.berichten), naam
+            assert not [m for m in ch.berichten if m.type == discord.MessageType.pins_add], f"pin-melding in #{naam}"
+
+
+def test_inhoud_alleen_tot_de_huidige_stap():
+    server = NepServer()
+    draai(server, 0)
+    # #regels bestaat al (nodig voor Community), maar de regels zelf komen pas in stap 2.
+    assert kanaal(server, "regels").berichten == []
+    draai(server, 2)
+    assert len(eigen_vastgepind(kanaal(server, "regels"), server)) == len(INHOUD["regels"].berichten)
+    assert kanaal(server, "start-hier").berichten, "stap 1 is ook gebouwd"
+
+
+def test_gewijzigde_tekst_wordt_bewerkt_niet_opnieuw_geplaatst():
+    server = NepServer()
+    draai(server, 27)
+    ki = INHOUD["pulls"]
+    b = ki.berichten[0]
+    nieuw_embed = {**b.embeds[0], "titel": "📌 Over #pulls (nieuw)"}
+    gewijzigd = {**INHOUD, "pulls": replace(ki, berichten=(replace(b, embeds=(nieuw_embed,)),))}
+    tweede = draai(server, 27, inhoud=gewijzigd)
+    assert tweede.wijzigingen == ["bericht bijwerken: #pulls/kaart"]
+    pins = eigen_vastgepind(kanaal(server, "pulls"), server)
+    assert len(pins) == 1 and pins[0].embeds[0].title == "📌 Over #pulls (nieuw)"
+
+
+def test_overbodig_setup_bericht_wordt_verwijderd():
+    server = NepServer()
+    draai(server, 27)
+    ki = INHOUD["start-hier"]
+    korter = {**INHOUD, "start-hier": replace(ki, berichten=ki.berichten[:2])}
+    tweede = draai(server, 27, inhoud=korter)
+    assert tweede.wijzigingen == ["oud setup-bericht verwijderen: #start-hier"]
+    assert len(eigen_vastgepind(kanaal(server, "start-hier"), server)) == 2
+
+
+def test_berichten_van_leden_tellen_niet_mee():
+    server = NepServer()
+    draai(server, 27)
+    ch = kanaal(server, "pulls")
+    lid = type("Lid", (), {"id": 42})()
+    ch.berichten.append(NepBericht(ch, lid, []))  # gewone pull van een lid, niet vastgepind
+    tweede = draai(server, 27)
+    assert tweede.wijzigingen == []

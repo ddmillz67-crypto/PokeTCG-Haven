@@ -1,0 +1,12 @@
+kanaal: aankondigingen
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: merk
+        titel: "📌 Over #aankondigingen"
+        beschrijving: "Hier staat het nieuws van het team: nieuwe features, events, winnaars en mijlpalen. Alleen het team post hier, zodat je niets mist.\n🇬🇧 Team news: features, events, winners and milestones."
+        velden:
+          - naam: "Ons weekritme / Weekly rhythm"
+            waarde: "**Maandag:** Binder Monday in {#collecties}\n**Woensdag:** Vraag van de week in de chat\n**Vrijdag:** Pull van de Week in {#pulls}\n**Zondag 20:00:** Pack-avond op de stage\n**Releasedag:** releasedraad en watch-party"
+          - naam: "Meldingen / Notifications"
+            waarde: "We pingen nooit iedereen. Kies zelf welke meldingen je wilt in {#rollen}.\n🇬🇧 We never ping everyone. Pick your notifications in {#rollen}."

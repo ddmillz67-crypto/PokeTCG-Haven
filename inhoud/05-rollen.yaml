@@ -1,0 +1,60 @@
+kanaal: rollen
+berichten:
+  - sleutel: uitleg
+    embeds:
+      - soort: merk
+        titel: "🎛️ Kies je rollen / Pick your roles"
+        beschrijving: |
+          Met de menu's hieronder kies je wat je verzamelt, waar je woont en welke meldingen je wilt. Je kunt het altijd weer aanpassen; haal een vinkje weg om een rol kwijt te raken.
+
+          🇬🇧 Use the menus below to pick what you collect, where you live and which notifications you want. Change it any time.
+    knoppen:
+      - { label: "Wissel naar Nederlands / Vlaams", emoji: "🇳🇱", actie: "taal:nlbe" }
+      - { label: "Switch to English", emoji: "🇬🇧", actie: "taal:en" }
+
+  - sleutel: interesses
+    embeds:
+      - soort: community
+        titel: "🃏 Wat verzamel je? / What do you collect?"
+        beschrijving: "Zo herkennen anderen waar je mee bezig bent. / So others know what you're into."
+    menu:
+      actie: "rollen:interesses"
+      plaatshouder: "Kies wat je verzamelt / Pick what you collect"
+      opties:
+        - { label: "Sealed (boxen, ETB's)", rol: "Sealed", emoji: "📦" }
+        - { label: "Singles (losse kaarten)", rol: "Singles", emoji: "🃏" }
+        - { label: "Japanse kaarten", rol: "Japans", emoji: "🇯🇵" }
+        - { label: "TCG Pocket", rol: "TCG Pocket", emoji: "📱" }
+        - { label: "Ik begin net / Just starting", rol: "Beginner", emoji: "🌱", beschrijving: "Haven Helpers helpen je extra" }
+
+  - sleutel: regio
+    embeds:
+      - soort: community
+        titel: "📍 Waar woon je? / Where do you live?"
+        beschrijving: "Voor meldingen uit de winkel-radar in jouw buurt. / For store-radar alerts near you."
+    menu:
+      actie: "rollen:regio"
+      plaatshouder: "Kies je regio / Pick your region"
+      max: 1
+      opties:
+        - { label: "Noord-Nederland", rol: "Noord-NL" }
+        - { label: "Midden-Nederland", rol: "Midden-NL" }
+        - { label: "Zuid-Nederland", rol: "Zuid-NL" }
+        - { label: "Vlaanderen", rol: "Vlaanderen" }
+        - { label: "Brussel", rol: "Brussel" }
+        - { label: "Wallonië", rol: "Wallonië" }
+        - { label: "Buiten NL/BE / Outside NL/BE", rol: "Buiten NL/BE" }
+
+  - sleutel: pings
+    embeds:
+      - soort: community
+        titel: "🔔 Welke meldingen wil je? / Which notifications?"
+        beschrijving: "Alleen wat je hier kiest, krijg je. / You only get what you pick here."
+    menu:
+      actie: "rollen:pings"
+      plaatshouder: "Kies je meldingen / Pick notifications"
+      opties:
+        - { label: "Releases", rol: "Release-ping", emoji: "📅" }
+        - { label: "Restocks (gratis, 10 min vertraagd)", rol: "Restock-ping", emoji: "📦" }
+        - { label: "Events en pack-avonden", rol: "Event-ping", emoji: "🎉" }
+        - { label: "Giveaways", rol: "Giveaway-ping", emoji: "🎁" }

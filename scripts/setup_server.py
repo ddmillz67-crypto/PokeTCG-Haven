@@ -23,6 +23,17 @@ from pathlib import Path
 import aiohttp
 import discord
 
+from haven.inhoud import (
+    Bericht,
+    Context,
+    InhoudFout,
+    KanaalInhoud,
+    bouw_embeds,
+    bouw_view,
+    controleer_inhoud,
+    is_gelijk,
+    laad_inhoud,
+)
 from haven.config import (
     TELLER_PREFIX,
     ConfigFout,
@@ -75,9 +86,17 @@ def env_dry_run() -> bool:
 
 
 class Inrichter:
-    def __init__(self, guild: discord.Guild, config: ServerConfig, tot_stap: int, dry_run: bool):
+    def __init__(
+        self,
+        guild: discord.Guild,
+        config: ServerConfig,
+        tot_stap: int,
+        dry_run: bool,
+        inhoud: dict[str, KanaalInhoud] | None = None,
+    ):
         self.guild = guild
         self.config = config
+        self.inhoud = inhoud or {}
         self.tot_stap = tot_stap
         self.dry_run = dry_run
         self.wijzigingen: list[str] = []
@@ -412,6 +431,87 @@ class Inrichter:
                 # Discord staat bijvoorbeeld maar één spam-regel per server toe.
                 self.waarschuw(f"{naam}: aanmaken mislukt ({fout.status}: {fout.text})")
 
+    # -- inhoud: embeds, knoppen en menu's ------------------------------------
+
+    async def context(self, kanalen: list) -> Context:
+        return Context(
+            guild_id=self.guild.id,
+            kanalen={c.name: c.id for c in kanalen if not isinstance(c, discord.CategoryChannel)},
+            rollen={naam: rol.id for naam, rol in self.rollen.items()},
+            env=dict(os.environ),
+        )
+
+    async def berichten_inrichten(self) -> None:
+        """Plaatst de inhoud van elk kanaal tot en met de huidige stap.
+
+        Setup-berichten zijn altijd vastgepind; zo herkent het script ze terug tussen de
+        berichten van leden en de bot. Gewijzigde inhoud wordt bewerkt, niet opnieuw geplaatst.
+        """
+        te_doen = [k for k in self.config.kanalen if k.stap <= self.tot_stap and k.naam in self.inhoud]
+        if not te_doen:
+            return
+        if self.dry_run:
+            for k in te_doen:
+                self.wijzig(f"inhoud controleren en plaatsen: #{k.naam} ({len(self.inhoud[k.naam].berichten)} bericht(en))")
+            return
+        kanalen = await self.guild.fetch_channels()
+        ctx = await self.context(kanalen)
+        for k in te_doen:
+            ch = discord.utils.find(lambda c: c.name == k.naam and not isinstance(c, discord.CategoryChannel), kanalen)
+            if ch is None:
+                self.waarschuw(f"#{k.naam}: kanaal niet gevonden, inhoud overgeslagen")
+                continue
+            try:
+                if isinstance(ch, discord.ForumChannel):
+                    await self.forumpost_inrichten(ch, self.inhoud[k.naam].berichten[0], ctx)
+                else:
+                    await self.kanaalberichten_inrichten(ch, self.inhoud[k.naam], ctx)
+            except discord.HTTPException as fout:
+                self.waarschuw(f"#{k.naam}: inhoud plaatsen mislukt ({fout.status}: {fout.text})")
+
+    async def kanaalberichten_inrichten(self, ch, ki: KanaalInhoud, ctx: Context) -> None:
+        eigen = sorted((m for m in await ch.pins() if m.author.id == self.guild.me.id), key=lambda m: m.id)
+        for i, bericht in enumerate(ki.berichten):
+            embeds, view = bouw_embeds(bericht, ctx), bouw_view(bericht, ctx)
+            if i < len(eigen):
+                m = eigen[i]
+                if not is_gelijk([e.to_dict() for e in m.embeds], [c.to_dict() for c in m.components], embeds, view):
+                    if self.wijzig(f"bericht bijwerken: #{ch.name}/{bericht.sleutel}"):
+                        await m.edit(embeds=embeds, view=view)
+            elif self.wijzig(f"bericht plaatsen: #{ch.name}/{bericht.sleutel}"):
+                m = await ch.send(embeds=embeds, view=view) if view else await ch.send(embeds=embeds)
+                await m.pin(reason="PokeTCG Haven setup")
+                await self.pinmelding_opruimen(ch)
+        for m in eigen[len(ki.berichten):]:
+            if self.wijzig(f"oud setup-bericht verwijderen: #{ch.name}"):
+                await m.delete()
+
+    async def pinmelding_opruimen(self, ch) -> None:
+        """Discord plaatst bij elk vastgepind bericht een melding; die halen we weg."""
+        async for m in ch.history(limit=5):
+            if m.type == discord.MessageType.pins_add and m.author.id == self.guild.me.id:
+                await m.delete()
+
+    async def forumpost_inrichten(self, forum, bericht: Bericht, ctx: Context) -> None:
+        threads = list(forum.threads)
+        async for t in forum.archived_threads(limit=100):
+            threads.append(t)
+        post = discord.utils.find(lambda t: t.name == bericht.post_titel and t.owner_id == self.guild.me.id, threads)
+        embeds, view = bouw_embeds(bericht, ctx), bouw_view(bericht, ctx)
+        if post is None:
+            if self.wijzig(f"vastgepinde forumpost plaatsen: #{forum.name}/{bericht.sleutel}"):
+                extra = {"view": view} if view else {}
+                nieuw = await forum.create_thread(name=bericht.post_titel, embeds=embeds, reason="PokeTCG Haven setup", **extra)
+                await nieuw.thread.edit(pinned=True)
+            return
+        start = await post.fetch_message(post.id)
+        if not is_gelijk([e.to_dict() for e in start.embeds], [c.to_dict() for c in start.components], embeds, view):
+            if self.wijzig(f"forumpost bijwerken: #{forum.name}/{bericht.sleutel}"):
+                await start.edit(embeds=embeds, view=view)
+        if not post.flags.pinned or post.archived:
+            if self.wijzig(f"forumpost vastpinnen: #{forum.name}/{bericht.sleutel}"):
+                await post.edit(pinned=True, archived=False)
+
     async def uitvoeren(self) -> None:
         if not self.guild.me.guild_permissions.administrator:
             self.waarschuw("de bot heeft geen Administrator-recht; sommige stappen kunnen mislukken")
@@ -423,6 +523,7 @@ class Inrichter:
         await self.kanalen_inrichten(categorieen)
         await self.automod_inrichten()
         await self.categorieen_ordenen(categorieen)
+        await self.berichten_inrichten()
 
 
 async def main(argv: list[str] | None = None) -> int:
@@ -440,8 +541,10 @@ async def main(argv: list[str] | None = None) -> int:
 
     try:
         config = laad_config(args.config)
-    except ConfigFout as fout:
-        log.error("config klopt niet: %s", fout)
+        inhoud = laad_inhoud()
+        controleer_inhoud(inhoud, config)
+    except (ConfigFout, InhoudFout) as fout:
+        log.error("config of inhoud klopt niet: %s", fout)
         return 2
 
     token = os.environ.get("DISCORD_TOKEN")
@@ -461,7 +564,7 @@ async def main(argv: list[str] | None = None) -> int:
                 log.error("de bot zit niet in server %s; nodig hem eerst uit", guild_id)
                 return
             log.info("verbonden als %s met server '%s'", client.user, guild.name)
-            inrichter = Inrichter(guild, config, args.tot_stap, args.dry_run)
+            inrichter = Inrichter(guild, config, args.tot_stap, args.dry_run, inhoud)
             await inrichter.uitvoeren()
             log.info(
                 "klaar: %d wijziging(en)%s, %d waarschuwing(en)",

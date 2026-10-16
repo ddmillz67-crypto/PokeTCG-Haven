@@ -1,0 +1,7 @@
+kanaal: success
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: alert
+        titel: "🏆 Gescoord! / Scored!"
+        beschrijving: "Iets gekocht dankzij een alert of de winkel-radar? Klik op **Gescoord!** onder de alert, dan verschijnt je succes hier. Zo ziet iedereen dat samen zoeken werkt.\n🇬🇧 Bought something thanks to an alert? Click **Scored!** under the alert and your success shows up here."

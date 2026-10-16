@@ -35,6 +35,7 @@ rollen:
   - { naam: Founder,              kleur: "#F7C948" }
   - { naam: Elite,                kleur: "#8E44AD" }
   - { naam: Sniper,               kleur: "#2ECC71" }
+  - { naam: Sniper Proef,         kleur: "#2ECC71" }   # tijdelijk via beloning; Whop beheert Sniper
   - { naam: Haven Partner,        kleur: "#1E6FD9" }
   - { naam: Haven Ambassadeur,    kleur: "#00BCD4" }
   - { naam: Verified Trader,      kleur: "#1ABC9C" }
@@ -115,7 +116,7 @@ categorieen:
 
   - naam: "💎 PREMIUM"
     kanalen:
-      - { naam: sniper-nlbe,  stap: 21, zichtbaar: [Sniper, Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor NL/BE-winkels" }
+      - { naam: sniper-nlbe,  stap: 21, zichtbaar: [Sniper, Sniper Proef, Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor NL/BE-winkels" }
       - { naam: sniper-eu,    stap: 22, zichtbaar: [Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor DE/FR-winkels" }
       - { naam: elite-lounge, stap: 23, zichtbaar: [Elite, Founder] }
       - { naam: group-buys,   stap: 24, zichtbaar: [Elite, Founder], type: forum, tags: [Open, Vol, Afgerond] }

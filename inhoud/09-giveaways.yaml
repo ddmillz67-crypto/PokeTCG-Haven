@@ -1,0 +1,40 @@
+kanaal: giveaways
+berichten:
+  - sleutel: zo-werkt-het
+    embeds:
+      - soort: community
+        titel: "🎁 Zo werken onze giveaways / How our giveaways work"
+        beschrijving: |
+          Bij elke mijlpaal in het ledental geven we iets weg, oplopend tot booster boxes. Daarnaast is er elke maand een kleine community-giveaway.
+
+          🇬🇧 At every member milestone we give something away, up to booster boxes, plus a small community giveaway every month.
+        velden:
+          - naam: "✅ Altijd gratis / Always free"
+            waarde: "Meedoen kost nooit iets: geen aankoop, geen abonnement, geen server-boost.\n🇬🇧 Entering never costs anything."
+          - naam: "🧠 Een wedstrijd, geen loterij / A contest, not a lottery"
+            waarde: "Je beantwoordt een vraag over de Pokémon TCG en doet een schatting. Van iedereen met het goede antwoord wint de beste schatting.\n🇬🇧 Answer a Pokémon TCG question and make a guess. The closest guess among correct answers wins."
+          - naam: "👤 Wie mag meedoen? / Who can enter?"
+            waarde: "Leden die minstens 7 dagen lid zijn, level 3 of hoger, met een verzendadres in NL of BE. Jonger dan 18? Dan vragen we bij het opsturen toestemming van een ouder.\n🇬🇧 Members for 7+ days, level 3+, with a shipping address in NL or BE."
+          - naam: "📦 Gewonnen? / Won?"
+            waarde: "Je krijgt een melding en meldt je binnen 72 uur via een ticket. We versturen verzekerd en verwijderen je adres daarna.\n🇬🇧 Claim within 72 hours via a ticket."
+    knoppen:
+      - { label: "Meldingen voor giveaways / Giveaway pings", emoji: "🔔", kanaal: rollen }
+
+  - sleutel: spelvoorwaarden
+    embeds:
+      - soort: community
+        titel: "📄 Spelvoorwaarden"
+        beschrijving: |
+          **1.** Organisator: PokeTCG Haven. Contact via {#tickets}.
+          **2.** Meedoen is gratis. Er is nooit een aankoop, abonnement, server-boost of betaalde rol nodig.
+          **3.** Vorm: een wedstrijd met een kennisvraag over de Pokémon TCG en een schiftingsvraag. Van alle deelnemers met het juiste antwoord wint wie het dichtst bij het antwoord op de schiftingsvraag zit. Bij een gelijke stand wint de vroegste inzending.
+          **4.** Wie mag meedoen: leden die minstens 7 dagen lid zijn, minimaal level 3 hebben en een verzendadres in Nederland of België hebben. Team, moderators en organiserende Haven Helpers doen niet mee.
+          **5.** Minderjarigen doen mee met toestemming van een ouder of voogd; die vragen we bij het versturen van de prijs.
+          **6.** Eén inzending per persoon. Meerdere accounts gebruiken betekent uitsluiting van deze en volgende giveaways.
+          **7.** De prijs staat in de giveaway en kan niet worden ingeruild voor geld.
+          **8.** De winnaar staat binnen 24 uur na sluiting in dit kanaal en krijgt een melding.
+          **9.** De winnaar meldt zich binnen 72 uur via een ticket, anders gaat de prijs naar de volgende beste inzending.
+          **10.** Verzending binnen 14 dagen, verzekerd, op onze kosten. Je adres gebruiken we alleen daarvoor en verwijderen we daarna.
+          **11.** Sponsort een partnerwinkel een prijs, dan staat dat in de giveaway. De sponsor krijgt geen gegevens van deelnemers.
+          **12.** Bij misbruik of fraude kan het team een inzending ongeldig verklaren.
+          **13.** Vragen of klachten gaan via {#tickets}.

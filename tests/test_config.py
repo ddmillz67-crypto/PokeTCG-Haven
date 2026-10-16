@@ -47,8 +47,8 @@ def test_staff_categorie_staat_onderaan(config):
 
 
 def test_rollen_volgens_bouwplan(config):
-    # 36 eigen rollen; met de botrol en @everyone zijn het er 38, zoals in het Bouwplan.
-    assert len(config.rollen) == 36
+    # 37 eigen rollen (36 uit het Bouwplan plus Sniper Proef); met botrol en @everyone 39.
+    assert len(config.rollen) == 37
     apart = {r.naam for r in config.rollen if r.apart_tonen}
     assert apart == {"Admin", "Mod", "Haven Helper", "Creator", "Pull van de Week"}
     assert not {"Sniper", "Elite", "Founder"} & apart, "betaalde rollen horen niet apart in de ledenlijst"

@@ -1,0 +1,16 @@
+kanaal: pulls
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: community
+        titel: "📌 Over #pulls"
+        beschrijving: "Laat je pulls zien! Groot of klein, elke pull telt. Onder elke pull opent automatisch een thread om te reageren.\n🇬🇧 Show your pulls! Big or small, every pull counts. A thread opens under each pull for replies."
+        velden:
+          - naam: "Wat mag hier? / What goes here?"
+            waarde: "Alleen foto's en video's van je pulls, met eventueel een korte tekst. Berichten zonder foto worden automatisch verwijderd; praten doe je in de thread.\n🇬🇧 Photos and videos only. Text-only messages are removed automatically; chat in the thread."
+          - naam: "⭐ Pull van de Week"
+            waarde: "Geef je favoriete pulls een ⭐. Elke vrijdag wint de pull met de meeste sterren: 7 dagen een eigen rol en een shout-out in {#aankondigingen}.\n🇬🇧 Star your favourite pulls. Every Friday the most-starred pull wins a role for 7 days."
+          - naam: "Voorbeeld / Example"
+            waarde: "Een duidelijke foto van de kaart, met de set erbij: *\"Eindelijk! Charizard ex SIR uit Obsidian Flames 🔥\"*"
+          - naam: "Hulp nodig? / Need help?"
+            waarde: "Weet je niet wat je kaart waard is? Vraag het in {#vragen-hulp} of {#help-en}."

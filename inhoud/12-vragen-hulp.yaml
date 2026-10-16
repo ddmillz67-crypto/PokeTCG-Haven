@@ -1,0 +1,15 @@
+kanaal: vragen-hulp
+berichten:
+  - sleutel: kaart
+    post_titel: "📌 Lees dit eerst: zo stel je een goede vraag"
+    embeds:
+      - soort: community
+        titel: "📌 Over #vragen-hulp"
+        beschrijving: "Geen vraag is te klein. Maak per vraag een post en kies een tag: **Waarde**, **Echt of nep** of **Beginner**. Bij de tag Beginner krijgt een Haven Helper een seintje."
+        velden:
+          - naam: "Zo krijg je snel antwoord"
+            waarde: "Zet een duidelijke foto erbij (voor- en achterkant), noem de set en het kaartnummer, en vertel wat je wilt weten."
+          - naam: "Opgelost?"
+            waarde: "Typ `/opgelost` in je post. Dan krijgt hij de tag Opgelost en weten anderen dat het antwoord erin staat."
+          - naam: "Voorbeeld"
+            waarde: "*\"Is deze Pikachu echt? De achterkant voelt anders.\"* met twee foto's en de tag Echt of nep."

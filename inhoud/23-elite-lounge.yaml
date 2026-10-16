@@ -1,0 +1,10 @@
+kanaal: elite-lounge
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: premium
+        titel: "💎 Elite-lounge"
+        beschrijving: "Een rustige plek voor Elite- en Founder-leden: sealed bespreken, ervaringen delen en elke maand het sealed-rapport.\n🇬🇧 A quiet place for Elite and Founder members, with the monthly sealed report."
+        velden:
+          - naam: "📊 Sealed-rapport"
+            waarde: "Elke eerste maandag van de maand: welke sets stijgen, welke dalen en wat er binnenkort uitkomt. Geen financieel advies; verzamel wat je leuk vindt."

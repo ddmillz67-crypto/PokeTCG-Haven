@@ -1,0 +1,71 @@
+kanaal: store
+berichten:
+  - sleutel: welkom
+    embeds:
+      - soort: premium
+        titel: "🛒 Welkom in de PokeTCG Haven Store"
+        beschrijving: |
+          **De community blijft altijd gratis.** Hier vind je extra's voor wie sneller of verder wil. Kijk rustig rond; niemand stuurt je een aanbieding.
+
+          🇬🇧 **The community is always free.** Here you'll find extras for those who want to be faster or go further. Browse at your own pace.
+
+  - sleutel: vergelijking
+    embeds:
+      - soort: premium
+        titel: "Gratis, Sniper of Elite? / Free, Sniper or Elite?"
+        velden:
+          - naam: "🧡 Gratis / Free"
+            waarde: "Alle community-kanalen\nRuilen en hulp\nGiveaways en events\nRestock-alerts na 10 min\nWinkel-radar na 10 min"
+            inline: true
+          - naam: "⚡ Haven Sniper"
+            waarde: "Alles van Gratis\nAlerts direct, NL/BE\nPersoonlijke meldingen\nWinkel-radar direct\n**€6,99 / maand**"
+            inline: true
+          - naam: "💎 Haven Elite"
+            waarde: "Alles van Sniper\nAlerts DE/FR\nPrijsalerts singles\nSealed-rapport\nVoorrang group buys\n**€12,99 / maand** (binnenkort)"
+            inline: true
+
+  - sleutel: sniper
+    embeds:
+      - soort: alert
+        titel: "⚡ Haven Sniper · €6,99 per maand"
+        beschrijving: "Mis nooit meer een drop. Elke restock bij Nederlandse en Belgische winkels direct in {#sniper-nlbe}, met prijs, limiet en een directe link. Stel met `/pings` in welke producten je een persoonlijke melding wilt.\n🇬🇧 Every NL/BE restock instantly, with price, limit and a direct link. Opzeggen kan altijd / cancel any time."
+    knoppen:
+      - { label: "Koop via Whop / Buy", emoji: "🛒", url: "{env:WHOP_SNIPER_URL}" }
+      - { label: "Meer info", emoji: "ℹ️", actie: "store:info:sniper" }
+      - { label: "Vraag stellen", emoji: "❓", actie: "ticket:store" }
+
+  - sleutel: founder
+    embeds:
+      - soort: release
+        titel: "🌟 Founder-pas · €79 voor het eerste jaar"
+        beschrijving: "Voor de eerste 100 fans. Een jaar Haven Sniper, plus Haven Elite zodra die live is, een vaste Founder-badge en blijvende korting. Op = op.\n🇬🇧 For our first 100 fans: a year of Sniper, Elite once live, a permanent Founder badge and a lasting discount."
+    knoppen:
+      - { label: "Koop via Whop / Buy", emoji: "🛒", url: "{env:WHOP_FOUNDER_URL}" }
+      - { label: "Meer info", emoji: "ℹ️", actie: "store:info:founder" }
+
+  - sleutel: elite
+    embeds:
+      - soort: premium
+        titel: "💎 Haven Elite · €12,99 per maand (binnenkort)"
+        beschrijving: "Alles van Sniper, plus alerts voor Duitse en Franse winkels, prijsalerts voor singles, een maandelijks sealed-rapport, voorrang bij group buys en de Elite-lounge. We openen Elite zodra alle functies echt werken.\n🇬🇧 Coming soon: everything in Sniper plus DE/FR alerts, singles price alerts and more."
+    knoppen:
+      - { label: "Koop via Whop / Buy", emoji: "🛒", url: "{env:WHOP_ELITE_URL}" }
+      - { label: "Meer info", emoji: "ℹ️", actie: "store:info:elite" }
+
+  - sleutel: partner
+    embeds:
+      - soort: merk
+        titel: "🏪 Haven Partner · voor kaartwinkels"
+        beschrijving: "Heb je een winkel? Krijg een eigen plek in {#winkel-partners} voor je restocks en events, een vermelding in de winkel-radar en de mogelijkheid om giveaways te sponsoren. De eerste 3 maanden gratis, daarna €29 per maand."
+    knoppen:
+      - { label: "Meer info", emoji: "ℹ️", actie: "store:info:partner" }
+      - { label: "Neem contact op", emoji: "✉️", actie: "ticket:partner" }
+
+  - sleutel: faq
+    embeds:
+      - soort: premium
+        titel: "❓ Veelgestelde vragen / FAQ"
+        beschrijving: "Opzeggen, betalen, je rol die niet verschijnt of het herroepingsrecht: klik op de knop voor alle antwoorden."
+    knoppen:
+      - { label: "Lees de FAQ / Read the FAQ", emoji: "📖", actie: "store:faq" }
+      - { label: "Vraag stellen / Ask", emoji: "❓", actie: "ticket:store" }

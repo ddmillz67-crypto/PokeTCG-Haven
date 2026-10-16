@@ -1,0 +1,13 @@
+kanaal: help-en
+berichten:
+  - sleutel: kaart
+    post_titel: "📌 Read this first: how to ask a good question"
+    embeds:
+      - soort: community
+        titel: "📌 About #help-en"
+        beschrijving: "No question is too small. Make one post per question and pick a tag: **Value**, **Real or fake** or **Beginner**. The Beginner tag alerts a Haven Helper."
+        velden:
+          - naam: "Get a fast answer"
+            waarde: "Add a clear photo (front and back), name the set and card number, and say what you want to know."
+          - naam: "Solved?"
+            waarde: "Type `/opgelost` in your post. It gets the Solved tag so others know the answer is there."

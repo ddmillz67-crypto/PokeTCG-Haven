@@ -1,0 +1,84 @@
+kanaal: regels
+berichten:
+  - sleutel: waarom
+    embeds:
+      - soort: regels
+        titel: "📜 Waarom we regels hebben"
+        beschrijving: |
+          Welkom in PokeTCG Haven! We willen dat iedereen zich hier thuis voelt: of je nu net je eerste booster hebt geopend of al twintig jaar verzamelt. Deze 8 afspraken zorgen daarvoor. Ze zijn kort, en bij elke afspraak leggen we uit waarom.
+      - soort: regels
+        titel: "📜 Why we have rules"
+        beschrijving: |
+          Welcome to PokeTCG Haven! We want everyone to feel at home here, whether you just opened your first booster or have been collecting for twenty years. These 8 agreements make that happen. They're short, and we explain why.
+
+  - sleutel: regels-nl
+    embeds:
+      - soort: regels
+        titel: "De 8 regels"
+        velden:
+          - naam: "1. Wees aardig"
+            waarde: "Geen haat, pesten, discriminatie of uitlachen van iemands collectie.\n*Waarom:* iedereen begint ergens, en een warme plek is waarom mensen blijven.\n*Voorbeeld:* \"Wat een mooie eerste pull!\" in plaats van \"Die is niks waard.\""
+          - naam: "2. Juiste kanaal, juiste taal"
+            waarde: "Nederlands of Vlaams in de NL/BE-sectie, Engels in de EN-sectie. In de gedeelde kanalen mag allebei.\n*Waarom:* zo blijft het overzichtelijk en kan iedereen meepraten."
+          - naam: "3. Handel alleen in de markt"
+            waarde: "Kopen, verkopen en ruilen doe je in {#ruilen-verkopen} of {#trade-en}, vanaf level 5. Stuur niemand ongevraagd een DM met een aanbod.\n*Waarom:* in de markt zie je vouches en kijken moderators mee. Oplichters werken vooral via DM's."
+          - naam: "4. Geen namaak en geen oplichting"
+            waarde: "Namaakkaarten verkopen of ruilen is verboden. Wie oplicht, wordt direct verbannen.\n*Waarom:* vertrouwen is de basis van een verzamelaarscommunity."
+          - naam: "5. Geen spam of reclame"
+            waarde: "Geen links naar andere servers, shops of je eigen kanaal zonder toestemming van het team.\n*Waarom:* niemand komt hier om reclame te lezen."
+          - naam: "6. Geen gokken"
+            waarde: "Geen betaalde loterijen, raffles, mystery packs of breaks met een willekeurige uitkomst.\n*Waarom:* dat is in Nederland en België vaak een verboden kansspel, en het hoort niet bij een eerlijke community."
+          - naam: "7. Bescherm je privacy"
+            waarde: "Deel geen adressen, telefoonnummers of screenshots van privéberichten in de kanalen.\n*Waarom:* je weet niet wie meeleest."
+          - naam: "8. Volg de regels van Discord"
+            waarde: "Je moet minimaal 13 jaar zijn. Handelen met geld kan vanaf 16 jaar, of jonger met toestemming van een ouder; kaart tegen kaart ruilen mag iedereen.\n*Waarom:* zo beschermen we jongere leden."
+        footer: "PokeTCG Haven is niet verbonden aan The Pokémon Company, Nintendo of Game Freak."
+
+  - sleutel: regels-en
+    embeds:
+      - soort: regels
+        titel: "The 8 rules"
+        velden:
+          - naam: "1. Be kind"
+            waarde: "No hate, bullying, discrimination or mocking someone's collection. Everyone starts somewhere."
+          - naam: "2. Right channel, right language"
+            waarde: "English in the EN section, Dutch or Flemish in the NL/BE section. Shared channels: both are fine."
+          - naam: "3. Trade only in the market"
+            waarde: "Buy, sell and trade in {#trade-en} or {#ruilen-verkopen}, from level 5. Never send unsolicited DMs with offers; scammers mostly work through DMs."
+          - naam: "4. No fakes, no scams"
+            waarde: "Selling or trading fake cards is not allowed. Scamming means an instant ban."
+          - naam: "5. No spam or ads"
+            waarde: "No links to other servers, shops or your own channel without permission from the team."
+          - naam: "6. No gambling"
+            waarde: "No paid raffles, lotteries, mystery packs or breaks with a random outcome. In NL and BE that is often illegal gambling."
+          - naam: "7. Protect your privacy"
+            waarde: "Don't share addresses, phone numbers or screenshots of private messages in channels."
+          - naam: "8. Follow Discord's rules"
+            waarde: "You must be at least 13. Trading for money from 16, or younger with a parent's permission; card-for-card trades are fine for everyone."
+        footer: "PokeTCG Haven is not affiliated with The Pokémon Company, Nintendo or Game Freak."
+
+  - sleutel: veilig-handelen
+    embeds:
+      - soort: regels
+        titel: "🛡️ Veilig handelen in 4 stappen / Trade safely in 4 steps"
+        beschrijving: |
+          **1.** Check de vouches en of iemand Verified Trader is.
+          **2.** Vraag een foto van de kaart met de naam van de verkoper en de datum op een papiertje ernaast.
+          **3.** Betaal een onbekende nooit via een methode zonder kopersbescherming.
+          **4.** Deal afgerond? Geef een vouch met `/vouch`.
+
+          🇬🇧 **1.** Check vouches and Verified Trader status. **2.** Ask for a photo with the seller's name and date on paper. **3.** Never pay a stranger without buyer protection. **4.** Done? Leave a `/vouch`.
+
+  - sleutel: als-er-iets-misgaat
+    embeds:
+      - soort: regels
+        titel: "🆘 Als er iets misgaat / If something goes wrong"
+        beschrijving: |
+          Zie je iets wat niet klopt, of heb je een vraag? Open een ticket; een moderator helpt je zo snel mogelijk.
+
+          **Bij een overtreding:** een waarschuwing, een time-out van 24 uur, een time-out van 7 dagen zonder toegang tot de markt, en daarna een ban. Oplichting, namaak en haat leiden direct tot een ban. Je kunt altijd bezwaar maken via een ticket.
+
+          🇬🇧 See something wrong or have a question? Open a ticket. **Violations:** warning, 24-hour timeout, 7-day timeout without market access, then a ban. Scams, fakes and hate mean an instant ban. You can always appeal through a ticket.
+    knoppen:
+      - { label: "Ik snap het, start de tour / Start the tour", emoji: "🧭", actie: "tour:start", stijl: groen }
+      - { label: "Ik heb een vraag / I have a question", emoji: "❓", actie: "regels:vraag" }

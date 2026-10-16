@@ -1,0 +1,16 @@
+kanaal: chat-en
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: community
+        titel: "📌 About #chat-en"
+        beschrijving: "The living room of PokeTCG Haven for English speakers. Talk cards, sets, your latest buy or just your day."
+        velden:
+          - naam: "What goes here?"
+            waarde: "Anything friendly about Pokémon or collecting. Buying and selling happens in {#trade-en}, questions are best asked in {#help-en}."
+          - naam: "💬 Question of the week"
+            waarde: "Every Wednesday we ask everyone a question, like: *\"Which card have you been chasing for years?\"*"
+          - naam: "Levels"
+            waarde: "Chatting earns XP. From level 5 you can post in the market, from level 3 you can enter giveaways. Check your level with `/level`."
+          - naam: "Need help?"
+            waarde: "Take the tour in {#server-tour} or open a ticket in {#tickets}."

@@ -1,0 +1,35 @@
+kanaal: server-tour
+berichten:
+  - sleutel: route
+    embeds:
+      - soort: merk
+        titel: "🧭 Jouw route door PokeTCG Haven"
+        beschrijving: |
+          Niemand hoeft zelf uit te zoeken hoe het hier werkt. Volg deze stappen, of klik op **Start mijn persoonlijke tour**: dan leiden we je er stap voor stap doorheen. Alleen jij ziet de tour.
+
+          **1.** Kies je taal in {#start-hier}
+          **2.** Lees de regels in {#regels}
+          **3.** Kies je pings, regio en interesses in {#rollen}
+          **4.** Stel je voor in {#voorstellen}
+          **5.** Deel je eerste pull in {#pulls}
+          **6.** Laat je binder zien in {#collecties}
+          **7.** Volg releases in {#release-kalender} en doe mee in {#giveaways}
+          **8.** Welkom in de vaste kern! Levels, events en de pack-avond op zondag
+
+          🇬🇧 Take the personal tour to be guided step by step. Only you can see it.
+    knoppen:
+      - { label: "Start mijn persoonlijke tour / Start my tour", emoji: "🧭", actie: "tour:start", stijl: groen }
+      - { label: "Ik ben de weg kwijt / I'm lost", emoji: "🗺️", actie: "tour:kwijt" }
+
+  - sleutel: kaart
+    embeds:
+      - soort: merk
+        titel: "🗺️ Kaart van de server / Server map"
+        velden:
+          - { naam: "📌 Start", waarde: "Welkom, regels, deze tour, aankondigingen en je rollen." }
+          - { naam: "🧡 Community", waarde: "Voorstellen, pulls, collecties en giveaways. Voor iedereen, in elke taal." }
+          - { naam: "🇳🇱🇧🇪 Nederland & België", waarde: "Chat, de markt, hulp en de winkel-radar in het Nederlands." }
+          - { naam: "🇬🇧 English", waarde: "Chat, trading and help in English." }
+          - { naam: "📅 Releases", waarde: "Releasekalender, restock-alerts en de successen van leden." }
+          - { naam: "🛒 Store", waarde: "Extra's voor wie sneller of verder wil. De community blijft altijd gratis." }
+          - { naam: "🛟 Support & partners", waarde: "Tickets en nieuws van onze partnerwinkels." }

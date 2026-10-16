@@ -1,0 +1,14 @@
+kanaal: restocks
+berichten:
+  - sleutel: kaart
+    embeds:
+      - soort: alert
+        titel: "📦 Gratis restock-alerts / Free restock alerts"
+        beschrijving: "Is een product weer op voorraad bij een Nederlandse of Belgische winkel? Dan zie je het hier, 10 minuten nadat Haven Sniper-leden het kregen. Kies **Restocks** in {#rollen} voor een ping.\n🇬🇧 Back in stock at a Dutch or Belgian store? You see it here 10 minutes after Haven Sniper members."
+        velden:
+          - naam: "🔗 Over de links / About the links"
+            waarde: "Sommige winkellinks zijn **affiliate-links**: koop je via zo'n link, dan krijgen wij een kleine vergoeding van de winkel. Jij betaalt niets extra, en het helpt de giveaways te betalen. Zulke links zijn altijd gelabeld.\n🇬🇧 Some store links are labelled affiliate links: we get a small fee, you pay nothing extra."
+          - naam: "Sneller? / Faster?"
+            waarde: "Met Haven Sniper krijg je elke alert direct, plus persoonlijke meldingen. Bekijk het in de Store."
+    knoppen:
+      - { label: "Bekijk Haven Sniper", emoji: "⚡", kanaal: store }

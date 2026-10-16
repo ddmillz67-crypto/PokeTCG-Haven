@@ -1,0 +1,42 @@
+# Teksten achter de knoppen "Meer info" en "Lees de FAQ" in #store (alleen zichtbaar voor wie klikt).
+info:
+  sniper:
+    titel: "⚡ Haven Sniper: zo werkt het"
+    tekst: |
+      **Wat je krijgt**
+      • Elke restock bij NL/BE-winkels direct in {#sniper-nlbe}, met prijs, limiet en directe link
+      • De winkel-radar zonder vertraging
+      • Persoonlijke meldingen per product via `/pings`
+
+      **Wat het kost:** €6,99 per maand, maandelijks opzegbaar.
+      **Hoe je begint:** koop via Whop en koppel je Discord-account; je krijgt binnen een minuut de rol Sniper.
+      **Eerlijk:** we sturen alerts, geen koopbots. We beloven niet dat je altijd iets kunt kopen; we zorgen dat je het als eerste weet.
+  founder:
+    titel: "🌟 Founder-pas: zo werkt het"
+    tekst: |
+      • Eenmalig €79 voor 12 maanden Haven Sniper
+      • Haven Elite erbij zodra die live is, binnen dezelfde 12 maanden
+      • Een vaste Founder-badge, ook na die 12 maanden
+      • Blijvende korting als je daarna doorgaat
+      • Maximaal 100 stuks
+  elite:
+    titel: "💎 Haven Elite: binnenkort"
+    tekst: |
+      Elite opent zodra alle functies echt werken: alerts voor DE/FR-winkels, prijsalerts voor singles, het maandelijkse sealed-rapport en voorrang bij group buys.
+      Founders krijgen Elite er automatisch bij.
+  partner:
+    titel: "🏪 Haven Partner: voor winkels"
+    tekst: |
+      • Een eigen thread in {#winkel-partners} voor je restocks en events
+      • Een vermelding in de winkel-radar
+      • De mogelijkheid om giveaways te sponsoren, met vermelding van je winkel
+      • De eerste 3 maanden gratis, daarna €29 per maand
+      Interesse? Klik op **Neem contact op**.
+faq:
+  titel: "❓ Veelgestelde vragen"
+  tekst: |
+    **Hoe zeg ik op?** Via je Whop-account. Je houdt toegang tot het einde van de betaalde periode.
+    **Hoe betaal ik?** Via Whop. Welke betaalmethodes beschikbaar zijn, zie je bij het afrekenen.
+    **Mijn rol verschijnt niet.** Controleer of je Discord-account aan Whop is gekoppeld. Lukt het niet? Open een ticket via **Vraag stellen**.
+    **Herroepingsrecht.** Bij digitale diensten heb je in de EU normaal 14 dagen bedenktijd. Start je de dienst direct, dan vragen we bij het afrekenen of je afziet van die bedenktijd. Twijfel je? Open een ticket.
+    **Is de community gratis?** Ja, en dat blijft zo. De Store is alleen voor extra's.

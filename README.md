@@ -1,86 +1,88 @@
 # PokeTCG Haven
 
-Setup en bot voor **PokeTCG Haven**, de Nederlands-Belgische Pokémon TCG-community op Discord, met een aparte Engelse sectie.
+De Haven-bot en de serverinrichting voor **PokeTCG Haven**, de Nederlands-Belgische Pokémon TCG-community op Discord met een aparte Engelse sectie.
 
-Het volledige bouwplan (naam, structuur, premium, sniper en het stappenplan per kanaal) staat in het [Bouwplan PokeTCG Haven](https://claude.ai/code/artifact/f8d07991-0b36-4c44-86cc-2563eb4bf05e).
+Het volledige bouwplan (structuur, community, giveaways, Store, marketing, rollen en regels) staat in het [Bouwplan PokeTCG Haven](https://claude.ai/code/artifact/f8d07991-0b36-4c44-86cc-2563eb4bf05e).
 
 > Niet verbonden aan The Pokémon Company, Nintendo of Game Freak.
 
-## Wat er nu in staat (stap 0: fundament)
+## Hoe het werkt
 
-| Onderdeel | Bestand |
+Eén programma, de **Haven-bot**, doet twee dingen:
+
+1. **Bij elke start richt hij de server in tot en met `SETUP_TOT_STAP`.** Dat omvat:
+   - rollen, kanalen, rechten, AutoMod en Community-modus;
+   - de inhoud van elk kanaal: embeds, kanaalkaarten, knoppen en menu's.
+
+   Wat al bestaat, wordt bijgewerkt en nooit dubbel geplaatst. Setup-berichten zijn vastgepind; zo herkent de bot ze.
+2. **Daarna blijft hij draaien** voor alles wat interactief is:
+
+| Onderdeel | Wat het doet |
 | --- | --- |
-| Rollen, kanalen, rechten en AutoMod, met een stapnummer per kanaal | `config/server.yaml` |
-| Script dat de server inricht; je kunt het veilig vaker draaien | `scripts/setup_server.py` |
-| Laden en controleren van de config, berekenen van de rechten | `haven/config.py` |
-| Huisstijl: kleuren en vaste opbouw van embeds | `haven/huisstijl.py` |
-| Tests, inclusief een stresstest tegen een nagebootste server | `tests/` |
+| Start | Taalkeuze NL/BE of EN met knoppen, en Nieuwe Trainer voor nieuwe leden |
+| Tour | Persoonlijke tour van 7 schermen, `/tour`, de rol Wegwijs en een welkom in #voorstellen |
+| Rollen | Menu's voor interesses, regio en meldingen |
+| Tickets | Privégesprekken in #tickets, met een transcript in #staff-logs bij het sluiten |
+| Community | #pulls alleen met media, met een thread, ⭐ en een felicitatie bij de eerste pull. Verder: een welkom per voorstelling, Pull van de Week (vrijdag), Binder Monday, Vraag van de week en het event voor de pack-avond |
+| Levels | XP per bericht (maximaal 1 keer per minuut), levelrollen en `/level`. De markt opent vanaf level 5 |
+| Giveaways | Een wedstrijd met kennisvraag en schiftingsvraag (`/giveaway start`), de controles, de winnaar, `/giveaway volgende`, en de mijlpaal-teller in #giveaways |
+| Ledenteller | Het voicekanaal "📊 Leden: …" bovenaan, elk kwartier bijgewerkt |
+| Markt | `/vouch`, `/vouches`, `/verify`, controle op foto's en tags, één collectiepost per lid, `/opgelost` |
+| Winkel-radar | `/meld`: direct in #sniper-nlbe, na 10 minuten in #winkel-radar met een regio-ping. Een melding verdwijnt na 2× 👎 |
+| Alerts | `/alert`: direct voor Sniper, na 10 minuten in #restocks. Verder: Gescoord!, `/uitverkocht` en persoonlijke DM's via `/pings` |
+| Releases | `/release` met de datum en een releasedraad |
+| Store | De knoppen "Meer info" en "FAQ". De koopknoppen gebruiken de Whop-links uit de omgeving |
+| Invites | `/invite` met een persoonlijke link. Bij 3 actieve leden krijg je 7 dagen Sniper Proef, bij 10 de rol Haven Ambassadeur |
 
-## Installeren
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env   # vul DISCORD_TOKEN en DISCORD_GUILD_ID in
-```
-
-Zet `.env` nooit in git; dat bestand staat in `.gitignore`.
-
-## Gebruik
-
-```bash
-# 1. Eerst kijken wat er zou veranderen (er wordt niets aangepast)
-python -m scripts.setup_server --tot-stap 0 --dry-run
-
-# 2. Uitvoeren
-python -m scripts.setup_server --tot-stap 0
-```
-
-`--tot-stap N` maakt alles aan tot en met stap N uit het stappenplan (0 tot en met 24). Na het goedkeuren van een kanaal verhoog je N en draai je het script opnieuw. Wat al bestaat, wordt bijgewerkt, nooit verwijderd.
-
-**Stap 0 doet het volgende:**
-
-- Verificatieniveau op medium, filter op expliciete inhoud voor alle leden, en standaard alleen meldingen bij mentions
-- 16 rollen in de juiste volgorde en met de kleuren uit de huisstijl
-- De categorie STAFF met `#staff-logs`
-- 4 AutoMod-regels: scamwoorden, invites, mention-spam en spam. Meldingen gaan naar `#staff-logs`
-
-**Na stap 0 met de hand doen in Discord:**
-
-1. Sleep onder Serverinstellingen > Rollen de rol **PokeTCG Haven** (de bot) helemaal naar boven.
-2. Geef jezelf de rol **Admin**.
-3. Zet bij stap 2 **Community** aan (Serverinstellingen > Community). Draai het script daarna opnieuw, zodat `#aankondigingen` een aankondigingskanaal wordt en Releaseavond een stage.
+**Wat nog niet automatisch gaat:**
+- **Winkelmonitors:** elke winkel werkt anders, dus die bouwen en testen we per winkel in stap 21. Tot die tijd plaatst het team alerts met `/alert`.
+- **Discord Onboarding:** die stel je zelf in Discord in na stap 9.
+- **Whop:** koppel je zelf met de Discord-rollen Sniper, Elite en Founder.
 
 ## Draaien op Railway
 
-`railway.json` laat Railway het setup-script één keer draaien en daarna stoppen (geen herstart). Zet in Railway onder **Variables**:
+`railway.json` start de bot met `python -m bot` en herstart hem na een fout.
+
+**Variabelen** (tabblad *Variables*):
 
 | Variabele | Waarde |
 | --- | --- |
 | `DISCORD_TOKEN` | het bot-token |
 | `DISCORD_GUILD_ID` | de server-ID |
-| `SETUP_TOT_STAP` | het stapnummer, bijvoorbeeld `0` |
+| `SETUP_TOT_STAP` | tot en met welke stap de bot bouwt: `0` tot en met `27` |
 | `SETUP_DRY_RUN` | `1` = alleen laten zien wat er zou veranderen (standaard), `0` = echt uitvoeren |
+| `DATA_DIR` | `/data` (zie het volume hieronder) |
+| `WHOP_SNIPER_URL`, `WHOP_FOUNDER_URL`, `WHOP_ELITE_URL` | de Whop-links; leeg betekent dat de knop "binnenkort" toont |
 
-Na het opslaan van de variabelen start Railway een nieuwe deploy. De uitkomst staat onder **Deploy Logs**. Begin altijd met `SETUP_DRY_RUN=1`, controleer de logs, en zet het daarna op `0`.
+**Volume:** maak in Railway een volume aan dat op `/data` is gekoppeld. Zonder volume verdwijnen XP, vouches, giveaways en tickets bij elke nieuwe deploy.
 
-## Testen
+**Zo bouw je een stap:**
+1. Zet `SETUP_TOT_STAP` op de stap en `SETUP_DRY_RUN` op `1`. In de Deploy Logs zie je wat er zou veranderen.
+2. Klopt het? Zet `SETUP_DRY_RUN` op `0`. De bot bouwt de stap en meldt het resultaat in #staff-logs.
+3. Controleer de stap in Discord, geef je akkoord, en ga verder met de volgende stap.
+
+**In de Developer Portal:**
+- Bot: **Server Members Intent** en **Message Content Intent** aan.
+- De bot heeft voor de setup Administrator nodig.
+- Sleep de rol **PokeTCG Haven** in Discord helemaal naar boven, anders kan de bot andere rollen niet beheren.
+
+## Opbouw
+
+| Map | Inhoud |
+| --- | --- |
+| `config/server.yaml` | Rollen, kanalen (met stapnummer), rechten en AutoMod |
+| `inhoud/` | Een bestand per kanaal met embeds, knoppen en menu's (NL/EN), plus de tour, de Store-teksten en de vragen van de week |
+| `haven/` | Logica zonder Discord-verbinding: config, inhoud, huisstijl, levels, giveaways, mijlpalen en alerts |
+| `bot/` | De Haven-bot: kern, database (SQLite) en een cog per onderdeel |
+| `scripts/setup_server.py` | De inrichting (wordt door de bot gebruikt; kan ook los draaien) |
+| `tests/` | 63 tests, waaronder stresstests tegen een nagebootste Discord-server |
+
+## Lokaal ontwikkelen
 
 ```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env   # vul in; zet .env nooit in git
 pytest -q
+python -m bot
 ```
-
-De tests controleren onder meer het volgende:
-
-- Premium is onzichtbaar voor gratis leden.
-- De taalsecties zijn van elkaar gescheiden.
-- Er zijn precies 24 tekstkanalen.
-- Een tweede run van het script verandert niets.
-- Een dry-run voert niets uit.
-- Met de hand gewijzigde rechten worden hersteld.
-
-## Vereisten in de Discord Developer Portal
-
-- Bot: **Server Members Intent** en **Message Content Intent** aan, Public Bot uit
-- Uitnodigen via OAuth2 > URL Generator met de scopes `bot` en `applications.commands`, en de permission Administrator (alleen voor de setup)
