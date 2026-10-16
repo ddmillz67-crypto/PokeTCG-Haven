@@ -81,6 +81,14 @@ class _NepBasis:
     def overwrites(self, waarde):
         self._nep_ow = dict(waarde)
 
+    async def move(self, *, beginning=False, end=False, category=discord.utils.MISSING, sync_permissions=False, reason=None):
+        self.server.api_calls += 1
+        if category is not discord.utils.MISSING:
+            self.category_id = category.id if category else None
+        buren = [c for c in self.server.overige if c is not self and c.category_id == self.category_id]
+        posities = [c.position for c in buren] or [0]
+        self.position = min(posities) - 1 if beginning else max(posities) + 1
+
     async def edit(self, **kw):
         self.server.api_calls += 1
         kw.pop("reason", None)
@@ -285,6 +293,9 @@ class NepServer:
     async def _kanaal(self, klasse, name, soort, category, overwrites, topic=None, slowmode_delay=0, tags=()):
         self.api_calls += 1
         ch = klasse(self, name, soort, category, overwrites, topic, slowmode_delay, tags)
+        # Discord zet nieuwe kanalen niet altijd in de volgorde waarin ze zijn aangemaakt;
+        # we draaien de volgorde om, zodat de test bewijst dat het script zelf ordent.
+        ch.position = -len(self.overige)
         self.overige.append(ch)
         return ch
 
@@ -526,3 +537,28 @@ def test_dry_run_waarschuwt_niet_voor_community_kanalen():
     plan = draai(server, 27, dry_run=True)
     assert plan.waarschuwingen == []
     assert any("aankondigingen (news)" in w for w in plan.wijzigingen)
+
+
+def test_kanalen_staan_in_de_volgorde_van_het_plan():
+    server = NepServer()
+    draai(server, 27)
+    config = laad_config(CONFIG)
+    for cat in server.categories:
+        tekst = sorted(
+            (c for c in server.overige if c.category_id == cat.id and c.soort in {"text", "news", "forum"}),
+            key=lambda c: c.position,
+        )
+        verwacht = [k.naam for k in config.kanalen if k.categorie == cat.name and k.type in {"text", "news", "forum"}]
+        assert [c.name for c in tekst] == verwacht, cat.name
+    tweede = draai(server, 27)
+    assert tweede.wijzigingen == []
+
+
+def test_ledenteller_staat_bovenaan():
+    server = NepServer()
+    algemeen = NepKanaal(server, "General", "voice")
+    algemeen.position = 0
+    server.overige.append(algemeen)
+    draai(server, 0)
+    los = sorted((c for c in server.overige if c.category_id is None), key=lambda c: c.position)
+    assert los[0].name.startswith("📊 Leden")

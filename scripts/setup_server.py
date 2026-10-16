@@ -346,6 +346,38 @@ class Inrichter:
             except discord.HTTPException as fout:
                 self.waarschuw(f"{kanaal.naam}: bijwerken mislukt ({fout.status}: {fout.text})")
 
+    async def kanalen_ordenen(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
+        """Zet de kanalen binnen elke categorie in de volgorde van de config.
+
+        Discord sorteert tekst- en forumkanalen apart van spraakkanalen, dus we ordenen per groep.
+        Kanalen zonder categorie (de ledenteller) komen helemaal bovenaan.
+        """
+        kanalen = await self.guild.fetch_channels() if not self.dry_run else list(self.guild.channels)
+        groepen: dict[tuple, list] = {}
+        for k in self.config.kanalen_tot_stap(self.tot_stap):
+            ch = discord.utils.find(
+                lambda c: not isinstance(c, discord.CategoryChannel)
+                and (c.name.startswith(f"{TELLER_PREFIX}{k.naam}:") if k.type == "teller" else c.name == k.naam),
+                kanalen,
+            )
+            if ch is None:
+                continue
+            spraak = isinstance(ch, (discord.VoiceChannel, discord.StageChannel))
+            groepen.setdefault((k.categorie, spraak), []).append(ch)
+        for (categorie, _), gewenst in groepen.items():
+            huidig = sorted(gewenst, key=lambda c: (c.position, c.id))
+            if [c.id for c in huidig] == [c.id for c in gewenst]:
+                continue
+            if not self.wijzig(f"kanalen ordenen in {categorie or 'bovenaan'}"):
+                continue
+            cat = categorieen.get(categorie) if categorie else None
+            if categorie is None:
+                for ch in reversed(gewenst):
+                    await ch.move(beginning=True, category=None, sync_permissions=False, reason="PokeTCG Haven setup")
+            else:
+                for ch in gewenst:
+                    await ch.move(end=True, category=cat, sync_permissions=False, reason="PokeTCG Haven setup")
+
     async def community_aanzetten(self) -> None:
         s = self.config.server
         if not s.get("community") or "COMMUNITY" in self.guild.features:
@@ -525,6 +557,7 @@ class Inrichter:
         await self.kanalen_inrichten(categorieen)
         await self.automod_inrichten()
         await self.categorieen_ordenen(categorieen)
+        await self.kanalen_ordenen(categorieen)
         await self.berichten_inrichten()
 
 
