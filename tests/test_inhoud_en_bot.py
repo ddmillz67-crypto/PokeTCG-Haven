@@ -179,3 +179,41 @@ def test_trainerskaart_toont_alle_keuzes(config, inhoud, tmp_path):
     assert "Sealed" in velden["🃏  Verzamelt"] and "Japans" in velden["🃏  Verzamelt"]
     assert velden["📍  Regio"] == "Vlaanderen"
     assert velden["🔔  Meldingen"] == "*nog niets gekozen*"
+
+
+def test_tweede_voorstelling_wordt_herkend(config, inhoud, tmp_path):
+    from types import SimpleNamespace
+
+    import discord
+
+    class Kanaal:
+        def __init__(self):
+            self.berichten = {}
+
+        async def fetch_message(self, i):
+            if i not in self.berichten:
+                raise discord.NotFound(SimpleNamespace(status=404, reason="weg"), "weg")
+            return self.berichten[i]
+
+    async def start():
+        bot = HavenBot(config, inhoud, 123, Database(tmp_path / "t.db"))
+        async with bot:
+            await bot.load_extension("bot.cogs.community")
+            cog = bot.get_cog("Community")
+            ch = Kanaal()
+            sam = SimpleNamespace(id=7)
+            eerste = SimpleNamespace(id=1, author=sam, channel=ch)
+            ch.berichten[1] = eerste
+            leeg = await cog.eerdere_voorstelling(eerste)
+            bot.db.kv_schrijf("voorstelling:7", "1")
+            tweede = SimpleNamespace(id=2, author=sam, channel=ch)
+            gevonden = await cog.eerdere_voorstelling(tweede)
+            del ch.berichten[1]  # eerste voorstelling verwijderd: dan mag je opnieuw
+            na_verwijderen = await cog.eerdere_voorstelling(tweede)
+            await bot.remove_cog("Community")
+            return leeg, gevonden, na_verwijderen, eerste
+
+    leeg, gevonden, na_verwijderen, eerste = asyncio.run(start())
+    assert leeg is None
+    assert gevonden is eerste
+    assert na_verwijderen is None

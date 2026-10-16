@@ -19,6 +19,7 @@ berichten:
             waarde: "Leden die minstens **7 dagen** lid zijn, **level 3** of hoger, met een verzendadres in **Nederland of België**.\nJonger dan 18? Dan vragen we bij het opsturen toestemming van een ouder.\n​"
           - naam: "📦  Gewonnen?"
             waarde: "Je krijgt een melding en meldt je binnen **72 uur** via een ticket.\nWe versturen **verzekerd** en verwijderen je adres daarna."
+        afbeelding: "{afbeelding:giveaway-meedoen}"
     knoppen:
       - { label: "Zet meldingen voor giveaways aan", emoji: "🔔", kanaal: rollen }
 

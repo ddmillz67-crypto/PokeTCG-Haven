@@ -12,6 +12,7 @@ from discord.ext import commands, tasks
 
 from bot.kern import PREFIX, HavenBot, antwoord
 from haven.giveaways import STANDAARD_SCHIFTINGSVRAAG, Inzending, mag_meedoen, rangschikking
+from haven.inhoud import afbeelding_url
 from haven.levels import GIVEAWAY_LEVEL, level_voor_xp
 from haven.mijlpalen import balk, behaalde_mijlpalen, getal, mijlpaal_rond
 
@@ -198,6 +199,7 @@ class Giveaways(commands.Cog):
             f"Bij **{getal(volgende)} leden** geven we weg: **{prijs}**\n\n`{balk(leden)}`\n**{getal(leden)}** van {getal(volgende)} leden\n\n"
             "Ken je iemand die ook verzamelt? Met `/invite` krijg je je eigen link.",
         )
+        e.set_image(url=afbeelding_url("mijlpalen"))
         bericht_id = self.bot.db.kv_lees("teller:bericht")
         m = None
         if bericht_id:

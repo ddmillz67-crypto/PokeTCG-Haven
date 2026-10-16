@@ -67,14 +67,48 @@ class Community(commands.Cog):
                 )
             )
 
+    async def eerdere_voorstelling(self, m: discord.Message) -> discord.Message | None:
+        """De voorstelling die dit lid al eerder plaatste, als die nog bestaat."""
+        eerder = self.bot.db.kv_lees(f"voorstelling:{m.author.id}")
+        if not eerder or int(eerder) == m.id:
+            return None
+        try:
+            return await m.channel.fetch_message(int(eerder))
+        except discord.NotFound:
+            return None
+
     async def voorstelling(self, m: discord.Message) -> None:
         if isinstance(m.channel, discord.Thread):
             return
+        if not self.bot.is_team(m.author):
+            oud = await self.eerdere_voorstelling(m)
+            if oud is not None:
+                await m.delete()
+                await m.channel.send(
+                    f"{m.author.mention} je hebt je al voorgesteld! 😊 Wil je iets toevoegen? Bewerk dan je eerste bericht, "
+                    f"of praat verder in je thread: {oud.jump_url}",
+                    delete_after=20,
+                )
+                return
+        self.bot.db.kv_schrijf(f"voorstelling:{m.author.id}", str(m.id))
         thread = await m.create_thread(name=f"Welkom {m.author.display_name}!"[:90])
         helper = self.bot.rol("Haven Helper")
+        e = self.bot.embed(
+            "community",
+            f"👋  Welkom in de Haven, {m.author.display_name}!",
+            f"Leuk dat je er bent, {m.author.mention}! 🧡\n\n"
+            "Iedereen kan hier reageren om **kennis te maken**. Binnen 24 uur zegt ook een **Haven Helper** hallo.\n\n"
+            "**Tip:** deel je mooiste kaart in {#pulls} of laat je binder zien in {#collecties}.",
+        )
+        view = discord.ui.View(timeout=None)
+        for label, kanaal, emoji in (("Deel een pull", "pulls", "📸"), ("Laat je collectie zien", "collecties", "📒"), ("Kies je rollen", "rollen", "🎛️")):
+            knop = self.bot.kanaal_knop(label, kanaal, emoji)
+            if knop:
+                view.add_item(knop)
         await thread.send(
             content=helper.mention if helper else None,
-            embed=self.bot.embed("community", "👋 Welkom!", f"Leuk dat je er bent, {m.author.mention}! Reageer hier gerust om kennis te maken."),
+            embed=e,
+            view=view if view.children else None,
             allowed_mentions=discord.AllowedMentions(roles=True),
         )
 

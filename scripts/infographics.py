@@ -105,7 +105,7 @@ def stappenstrook(naam: str, label: str, type_: str, stappen: list[tuple[str, st
     cy = 196
     stippelpad(d, [(x, cy) for x in xs], ZAND)
     tf, uf = font("InterDisplay-Bold.otf", 30), font("Inter-Medium.otf", 21)
-    kolom = int((BREED - 2 * marge) / (aantal - 1)) - 24
+    kolom = min(int((BREED - 2 * marge) / (aantal - 1)) - 24, 2 * marge - 20)
     for i, (titel, uitleg, t) in enumerate(stappen):
         badge(d, xs[i], cy, 62, t, str(i + 1))
         gecentreerd(d, xs[i], cy + 88, titel, tf, INKT, kolom, 1)
@@ -158,26 +158,17 @@ def tourkaart() -> Path:
     return opslaan(img, "tour-kaart")
 
 
-def huisregels() -> Path:
-    """De 8 huisregels als tegels: nummer, symbool, titel en het waarom."""
-    hoog = 640
-    img = achtergrond(hoog, "vechten")
-    d = ImageDraw.Draw(img, "RGBA")
-    pil(d, 48, 36, "DE CODE VAN EEN GOEDE TRAINER", TYPES["vechten"][0], "vechten")
-    regels = [
-        ("Wees aardig", "Iedereen begint ergens", "fee"),
-        ("Juiste kanaal", "Zo blijft het overzichtelijk", "water"),
-        ("Handel in de markt", "Daar zie je de vouches", "metaal"),
-        ("Geen namaak", "Vertrouwen is de basis", "vechten"),
-        ("Geen spam", "Niemand komt voor reclame", "gras"),
-        ("Geen gokken", "Geen betaalde loterijen", "duister"),
-        ("Privacy", "Deel geen adressen", "psychisch"),
-        ("Regels van Discord", "Minimaal 13 jaar", "draak"),
-    ]
+def tegels(naam: str, label: str, type_: str, items: list[tuple[str, str, str]], genummerd: bool = True) -> Path:
+    """Tegels met symbool, titel en één regel uitleg; 4 per rij."""
     tw, th, gap = 258, 236, 22
+    rijen = (len(items) + 3) // 4
+    hoog = 104 + rijen * th + (rijen - 1) * gap + 60
+    img = achtergrond(hoog, type_)
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, label, TYPES[type_][0], type_)
     x0 = (BREED - 4 * tw - 3 * gap) // 2
     tf, uf = font("InterDisplay-Bold.otf", 25), font("Inter-Medium.otf", 19)
-    for i, (titel, waarom, t) in enumerate(regels):
+    for i, (titel, uitleg, t) in enumerate(items):
         x = x0 + (i % 4) * (tw + gap)
         y = 104 + (i // 4) * (th + gap)
         kleur = TYPES[t][0]
@@ -185,11 +176,29 @@ def huisregels() -> Path:
         d.rounded_rectangle([x, y, x + tw, y + th], radius=20, fill=(255, 255, 255), outline=licht(kleur, 0.3), width=3)
         d.rounded_rectangle([x, y, x + tw, y + 14], radius=7, fill=kleur)
         badge(d, x + tw / 2, y + 82, 40, t)
-        d.ellipse([x + 16, y + 28, x + 56, y + 68], fill=INKT)
-        d.text((x + 36, y + 48), str(i + 1), font=font("InterDisplay-Bold.otf", 22), fill=(255, 255, 255), anchor="mm")
+        if genummerd:
+            d.ellipse([x + 16, y + 28, x + 56, y + 68], fill=INKT)
+            d.text((x + 36, y + 48), str(i + 1), font=font("InterDisplay-Bold.otf", 22), fill=(255, 255, 255), anchor="mm")
         gecentreerd(d, x + tw / 2, y + 140, titel, tf, INKT, tw - 24, 1)
-        gecentreerd(d, x + tw / 2, y + 178, waarom, uf, GRIJS, tw - 28, 2, 24)
-    return opslaan(img, "regels-overzicht")
+        gecentreerd(d, x + tw / 2, y + 178, uitleg, uf, GRIJS, tw - 28, 2, 24)
+    return opslaan(img, naam)
+
+
+def huisregels() -> Path:
+    """De 8 huisregels als tegels: nummer, symbool, titel en het waarom."""
+    return tegels(
+        "regels-overzicht", "DE CODE VAN EEN GOEDE TRAINER", "vechten",
+        [
+            ("Wees aardig", "Iedereen begint ergens", "fee"),
+            ("Juiste kanaal", "Zo blijft het overzichtelijk", "water"),
+            ("Handel in de markt", "Daar zie je de vouches", "metaal"),
+            ("Geen namaak", "Vertrouwen is de basis", "vechten"),
+            ("Geen spam", "Niemand komt voor reclame", "gras"),
+            ("Geen gokken", "Geen betaalde loterijen", "duister"),
+            ("Privacy", "Deel geen adressen", "psychisch"),
+            ("Regels van Discord", "Minimaal 13 jaar", "draak"),
+        ],
+    )
 
 
 def chip(d: ImageDraw.ImageDraw, x: int, y: int, tekst: str, kleur) -> int:
@@ -200,61 +209,148 @@ def chip(d: ImageDraw.ImageDraw, x: int, y: int, tekst: str, kleur) -> int:
     return x + w + 10
 
 
-def trainerskaart() -> Path:
-    """Een voorbeeld-trainerskaart: zo zien anderen wat je verzamelt, waar je woont en wat je volgt."""
+Rij = tuple[str, "list[tuple[str, str]] | str"]
+
+
+def profielkaart(
+    naam: str, label: str, type_: str, kaarttitel: str, persoon: str, ondertitel: str, avatar: str,
+    rijen: list[Rij], stappen: list[tuple[str, str, str]], level: str | None = None,
+) -> Path:
+    """Een kaart in trainerskaart-stijl links, met genummerde uitleg rechts.
+
+    Een rij is (label, chips) met chips als [(tekst, type)], of (label, tekst) voor gewone tekst.
+    """
     hoog = 600
-    img = achtergrond(hoog, "fee")
+    img = achtergrond(hoog, type_)
     d = ImageDraw.Draw(img, "RGBA")
-    pil(d, 48, 36, "ZO ZIET JOUW TRAINERSKAART ERUIT", TYPES["fee"][0], "fee")
-    # de kaart
+    kleur = TYPES[type_][0]
+    pil(d, 48, 36, label, kleur, type_)
     kx, ky, kw, kh = 48, 100, 700, 440
     geel = (255, 214, 92)
     d.rounded_rectangle([kx + 6, ky + 10, kx + kw + 6, ky + kh + 10], radius=26, fill=(0, 0, 0, 40))
     d.rounded_rectangle([kx, ky, kx + kw, ky + kh], radius=26, fill=geel)
     d.rounded_rectangle([kx + 14, ky + 14, kx + kw - 14, ky + kh - 14], radius=18, fill=(255, 252, 244))
-    d.rounded_rectangle([kx + 14, ky + 14, kx + kw - 14, ky + 74], radius=18, fill=TYPES["fee"][0])
-    d.rectangle([kx + 14, ky + 50, kx + kw - 14, ky + 74], fill=TYPES["fee"][0])
-    d.text((kx + 40, ky + 44), "TRAINERSKAART", font=font("InterDisplay-Bold.otf", 28), fill=(255, 255, 255), anchor="lm")
-    d.text((kx + kw - 40, ky + 44), "PokeTCG Haven", font=font("Inter-SemiBold.otf", 19), fill=(255, 255, 255), anchor="rm")
-    badge(d, kx + 100, ky + 160, 52, "vuur")
-    d.text((kx + 172, ky + 128), "Trainer Sam", font=font("InterDisplay-Bold.otf", 32), fill=INKT)
-    d.text((kx + 172, ky + 170), "Lid sinds vandaag", font=font("Inter-Medium.otf", 19), fill=GRIJS)
-    lf = font("Inter-Bold.otf", 18)
-    rijen = [
-        ("VERZAMELT", [("Sealed", "metaal"), ("Singles", "water"), ("Japans", "vechten")]),
-        ("REGIO", [("Zuid-Nederland", "gras")]),
-        ("MELDINGEN", [("Releases", "draak"), ("Giveaways", "fee")]),
-    ]
+    d.rounded_rectangle([kx + 14, ky + 14, kx + kw - 14, ky + 74], radius=18, fill=kleur)
+    d.rectangle([kx + 14, ky + 50, kx + kw - 14, ky + 74], fill=kleur)
+    helder = 0.299 * kleur[0] + 0.587 * kleur[1] + 0.114 * kleur[2] > 170
+    kop = donker(kleur, 0.75) if helder else (255, 255, 255)
+    d.text((kx + 40, ky + 44), kaarttitel, font=font("InterDisplay-Bold.otf", 28), fill=kop, anchor="lm")
+    d.text((kx + kw - 40, ky + 44), "PokeTCG Haven", font=font("Inter-SemiBold.otf", 19), fill=kop, anchor="rm")
+    badge(d, kx + 100, ky + 160, 52, avatar)
+    d.text((kx + 172, ky + 128), persoon, font=font("InterDisplay-Bold.otf", 32), fill=INKT)
+    d.text((kx + 172, ky + 170), ondertitel, font=font("Inter-Medium.otf", 19), fill=GRIJS)
+    lf, tf_rij = font("Inter-Bold.otf", 18), font("Inter-SemiBold.otf", 20)
     y = ky + 236
-    for label, chips in rijen:
-        d.text((kx + 40, y + 18), label, font=lf, fill=GRIJS, anchor="lm")
-        x = kx + 196
-        for tekst, t in chips:
-            x = chip(d, x, y, tekst, TYPES[t][0])
+    for rlabel, waarde in rijen:
+        d.text((kx + 40, y + 18), rlabel, font=lf, fill=GRIJS, anchor="lm")
+        if isinstance(waarde, str):
+            d.text((kx + 216, y + 18), waarde, font=tf_rij, fill=INKT, anchor="lm")
+        else:
+            x = kx + 216
+            for tekst, t in waarde:
+                x = chip(d, x, y, tekst, TYPES[t][0])
         y += 52
-    # level-balk
-    d.text((kx + 40, y + 18), "LEVEL", font=lf, fill=GRIJS, anchor="lm")
-    bx, bw = kx + 196, 300
-    d.rounded_rectangle([bx, y + 6, bx + bw, y + 30], radius=12, fill=(236, 232, 244))
-    d.rounded_rectangle([bx, y + 6, bx + int(bw * 0.35), y + 30], radius=12, fill=TYPES["elektrisch"][0])
-    d.text((bx + bw + 14, y + 18), "Nieuwe Trainer", font=font("Inter-SemiBold.otf", 18), fill=INKT, anchor="lm")
-    # uitleg rechts
+    if level:
+        d.text((kx + 40, y + 18), "LEVEL", font=lf, fill=GRIJS, anchor="lm")
+        bx, bw = kx + 216, 280
+        d.rounded_rectangle([bx, y + 6, bx + bw, y + 30], radius=12, fill=(236, 232, 244))
+        d.rounded_rectangle([bx, y + 6, bx + int(bw * 0.35), y + 30], radius=12, fill=TYPES["elektrisch"][0])
+        d.text((bx + bw + 14, y + 18), level, font=font("Inter-SemiBold.otf", 18), fill=INKT, anchor="lm")
     rx = 800
-    stappen = [
-        ("1", "Kies wat je verzamelt", "Anderen zien meteen waar je mee bezig bent", "metaal"),
-        ("2", "Kies je regio", "Voor de winkel-radar bij jou in de buurt", "gras"),
-        ("3", "Kies je meldingen", "Alleen pings die jij wilt, nooit @everyone", "draak"),
-    ]
     tf, uf = font("InterDisplay-Bold.otf", 25), font("Inter-Medium.otf", 19)
-    for i, (nr, titel, uitleg, t) in enumerate(stappen):
+    for i, (titel, uitleg, t) in enumerate(stappen):
         y = 120 + i * 140
         badge(d, rx + 34, y + 40, 32, t, None)
         d.ellipse([rx + 4, y + 4, rx + 32, y + 32], fill=INKT)
-        d.text((rx + 18, y + 18), nr, font=font("InterDisplay-Bold.otf", 18), fill=(255, 255, 255), anchor="mm")
+        d.text((rx + 18, y + 18), str(i + 1), font=font("InterDisplay-Bold.otf", 18), fill=(255, 255, 255), anchor="mm")
         d.text((rx + 84, y + 10), titel, font=tf, fill=INKT)
         for j, regel in enumerate(omloop(d, uitleg, uf, 300)[:2]):
             d.text((rx + 84, y + 48 + j * 24), regel, font=uf, fill=GRIJS)
-    return opslaan(img, "rollen-kaart")
+    return opslaan(img, naam)
+
+
+def trainerskaart() -> Path:
+    """Een voorbeeld-trainerskaart: zo zien anderen wat je verzamelt, waar je woont en wat je volgt."""
+    return profielkaart(
+        "rollen-kaart", "ZO ZIET JOUW TRAINERSKAART ERUIT", "fee", "TRAINERSKAART", "Trainer Sam", "Lid sinds vandaag", "vuur",
+        [
+            ("VERZAMELT", [("Sealed", "metaal"), ("Singles", "water"), ("Japans", "vechten")]),
+            ("REGIO", [("Zuid-Nederland", "gras")]),
+            ("MELDINGEN", [("Releases", "draak"), ("Giveaways", "fee")]),
+        ],
+        [
+            ("Kies wat je verzamelt", "Anderen zien meteen waar je mee bezig bent", "metaal"),
+            ("Kies je regio", "Voor de winkel-radar bij jou in de buurt", "gras"),
+            ("Kies je meldingen", "Alleen pings die jij wilt, nooit @everyone", "draak"),
+        ],
+        level="Nieuwe Trainer",
+    )
+
+
+def voorstelkaart() -> Path:
+    """Een voorbeeld-voorstelling, met hoe het daarna verdergaat."""
+    return profielkaart(
+        "voorstellen-kaart", "ZO STEL JE JE VOOR", "gras", "HALLO, IK BEN SAM!", "Sam", "Verzamelt sinds 2004", "psychisch",
+        [
+            ("FAVORIET", [("Gengar", "psychisch")]),
+            ("VERZAMELT", [("Japanse sets", "vechten"), ("Alles met Gengar", "psychisch")]),
+            ("PRONKSTUK", "Gengar VMAX alt art"),
+            ("ZOEKT NOG", "Gengar uit Fusion Strike"),
+        ],
+        [
+            ("Plaats je voorstelling", "Eén bericht, gebruik gerust het voorbeeld", "gras"),
+            ("Er opent een thread", "Daar kan iedereen je welkom heten", "water"),
+            ("Binnen 24 uur hallo", "Een Haven Helper zegt je persoonlijk gedag", "fee"),
+        ],
+    )
+
+
+def collectietags() -> Path:
+    return tegels(
+        "collecties-tags", "KIES DE TAG VAN JE COLLECTIE", "psychisch",
+        [
+            ("Binder", "Je mooiste binderpagina's", "psychisch"),
+            ("Sealed", "Boxen, ETB's en displays", "metaal"),
+            ("Graded", "PSA, CGC en BGS", "draak"),
+            ("Japans", "Japanse sets en promo's", "vechten"),
+        ],
+        genummerd=False,
+    )
+
+
+def mijlpaalladder() -> Path:
+    """De mijlpaal-ladder als oplopende trap, rechtstreeks uit haven/mijlpalen.py."""
+    from haven.mijlpalen import LADDER, getal
+
+    hoog = 660
+    img = achtergrond(hoog, "fee")
+    d = ImageDraw.Draw(img, "RGBA")
+    pil(d, 48, 36, "DE MIJLPAAL-LADDER  ·  ALTIJD GRATIS MEEDOEN", TYPES["fee"][0], "fee")
+    n = len(LADDER)
+    kw, gap = 148, 16
+    x0 = (BREED - n * kw - (n - 1) * gap) // 2
+    bodem = hoog - 64
+    tf, pf = font("InterDisplay-Bold.otf", 26), font("Inter-SemiBold.otf", 17)
+    goud = (255, 200, 60)
+    for i, (grens, prijs) in enumerate(LADDER):
+        x = x0 + i * (kw + gap)
+        hoogte = 236 + i * 38
+        y = bodem - hoogte
+        box = "box" in prijs.lower()
+        kleur = goud if box else TYPES["fee"][0]
+        d.rounded_rectangle([x + 4, y + 8, x + kw + 4, bodem + 8], radius=16, fill=(0, 0, 0, 30))
+        d.rounded_rectangle([x, y, x + kw, bodem], radius=16, fill=(255, 255, 255), outline=kleur, width=3)
+        d.rounded_rectangle([x, y, x + kw, y + 12], radius=6, fill=kleur)
+        d.text((x + kw / 2, y + 44), getal(grens), font=tf, fill=INKT, anchor="mm")
+        d.text((x + kw / 2, y + 72), "leden", font=pf, fill=GRIJS, anchor="mm")
+        cy = y + 124
+        if box:
+            d.ellipse([x + kw / 2 - 34, cy - 34, x + kw / 2 + 34, cy + 34], fill=goud, outline=donker(goud, 0.3), width=4)
+            ster(d, x + kw / 2, cy, 22, (255, 255, 255), 0.42, 5)
+        else:
+            badge(d, x + kw / 2, cy, 34, "fee")
+        gecentreerd(d, x + kw / 2, cy + 50, prijs, pf, INKT, kw - 20, 3, 22)
+    return opslaan(img, "mijlpalen")
 
 
 def weekritme() -> Path:
@@ -319,6 +415,27 @@ def main() -> None:
         huisregels(),
         trainerskaart(),
         weekritme(),
+        voorstelkaart(),
+        stappenstrook(
+            "pulls-flow", "VAN PULL TOT PULL VAN DE WEEK", "elektrisch",
+            [
+                ("Deel je foto", "Er opent meteen een thread om over te praten", "elektrisch"),
+                ("Geef sterren", "Een ster bij de pulls die jij het mooist vindt", "fee"),
+                ("Vrijdag 18:00", "De pull met de meeste sterren wint", "vuur"),
+            ],
+            ("Pull van de Week", "Een eigen rol en een shout-out"),
+        ),
+        collectietags(),
+        stappenstrook(
+            "giveaway-meedoen", "ZO DOE JE MEE  ·  GRATIS", "fee",
+            [
+                ("Klik Doe mee", "Bij de giveaway in dit kanaal", "fee"),
+                ("De kennisvraag", "Een vraag over de Pokémon TCG", "water"),
+                ("Doe een schatting", "Dat is de schiftingsvraag", "psychisch"),
+            ],
+            ("Beste schatting wint", "Van iedereen met het goede antwoord"),
+        ),
+        mijlpaalladder(),
     ]
     for p in paden:
         print(p.relative_to(ROOT))
