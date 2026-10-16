@@ -255,7 +255,9 @@ class Inrichter:
         Met alleen_basis=True alleen de kanalen van stap 0 (en de vroege), zodat Community-modus
         aan kan voordat er aankondigings- en stagekanalen nodig zijn.
         """
-        community = "COMMUNITY" in self.guild.features
+        # In een dry-run is Community nog niet echt aangezet, maar bij de echte run wel
+        # (dat gebeurt vóór deze kanalen). Zo toont de dry-run wat er echt gaat gebeuren.
+        community = "COMMUNITY" in self.guild.features or (self.dry_run and bool(self.config.server.get("community")))
         for kanaal in self.config.kanalen_tot_stap(self.tot_stap):
             if alleen_basis and not (kanaal.stap == 0 or kanaal.vroeg):
                 continue

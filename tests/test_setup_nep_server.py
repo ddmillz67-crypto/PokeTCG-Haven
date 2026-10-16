@@ -519,3 +519,10 @@ def test_berichten_van_leden_tellen_niet_mee():
     ch.berichten.append(NepBericht(ch, lid, []))  # gewone pull van een lid, niet vastgepind
     tweede = draai(server, 27)
     assert tweede.wijzigingen == []
+
+
+def test_dry_run_waarschuwt_niet_voor_community_kanalen():
+    server = NepServer()
+    plan = draai(server, 27, dry_run=True)
+    assert plan.waarschuwingen == []
+    assert any("aankondigingen (news)" in w for w in plan.wijzigingen)
