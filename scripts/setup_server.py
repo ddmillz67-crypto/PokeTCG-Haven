@@ -441,8 +441,13 @@ class Inrichter:
             return
         if not self.wijzig("categorieën en kanalen in de juiste volgorde zetten"):
             return
+        # Twee aanroepen: eerst de categorieën onderling, dan de kanalen. Kleiner en minder foutgevoelig
+        # dan alles in één keer; de posities lopen wel door, zodat de volgorde overal klopt.
         posities = [{"id": c.id, "position": i} for i, c in enumerate(gewenst)]
-        await self.guild._state.http.bulk_channel_update(self.guild.id, posities, reason="PokeTCG Haven setup")
+        cat_ids = {c.id for c in gewenst if isinstance(c, discord.CategoryChannel)}
+        for deel in ([p for p in posities if p["id"] in cat_ids], [p for p in posities if p["id"] not in cat_ids]):
+            if deel:
+                await self.guild._state.http.bulk_channel_update(self.guild.id, deel, reason="PokeTCG Haven setup")
 
     async def community_aanzetten(self) -> None:
         s = self.config.server
@@ -615,17 +620,30 @@ class Inrichter:
     async def uitvoeren(self) -> None:
         if not self.guild.me.guild_permissions.administrator:
             self.waarschuw("de bot heeft geen Administrator-recht; sommige stappen kunnen mislukken")
-        await self.server_instellingen()
-        await self.hernoemen()
-        await self.rollen_inrichten()
-        categorieen = await self.categorieen_inrichten()
-        await self.kanalen_inrichten(categorieen, alleen_basis=True)
-        await self.community_aanzetten()
-        await self.kanalen_inrichten(categorieen)
-        await self.automod_inrichten()
-        await self.opruimen()
-        await self.volgorde_rechtzetten()
-        await self.berichten_inrichten()
+        # Elke fase vangt zijn eigen fouten op: als bijvoorbeeld de volgorde niet lukt,
+        # worden de berichten daarna toch gewoon bijgewerkt. De fout komt in de waarschuwingen
+        # (en zo in #staff-logs), zodat we zien wat er misging.
+        await self.fase("serverinstellingen", self.server_instellingen)
+        await self.fase("hernoemen", self.hernoemen)
+        await self.fase("rollen", self.rollen_inrichten)
+        categorieen = await self.fase("categorieën", self.categorieen_inrichten) or {}
+        await self.fase("basiskanalen", self.kanalen_inrichten, categorieen, alleen_basis=True)
+        await self.fase("Community-modus", self.community_aanzetten)
+        await self.fase("kanalen", self.kanalen_inrichten, categorieen)
+        await self.fase("AutoMod", self.automod_inrichten)
+        await self.fase("opruimen", self.opruimen)
+        await self.fase("volgorde", self.volgorde_rechtzetten)
+        await self.fase("berichten", self.berichten_inrichten)
+
+    async def fase(self, naam: str, actie, *args, **kwargs):
+        try:
+            return await actie(*args, **kwargs)
+        except discord.HTTPException as fout:
+            self.waarschuw(f"fase '{naam}' mislukt ({fout.status}: {fout.text or fout}); de volgende fases gaan gewoon door")
+        except Exception as fout:  # noqa: BLE001 - een onverwachte fout mag de rest niet tegenhouden
+            log.exception("fase '%s' mislukt", naam)
+            self.waarschuw(f"fase '{naam}' mislukt ({type(fout).__name__}: {fout}); de volgende fases gaan gewoon door")
+        return None
 
 
 async def main(argv: list[str] | None = None) -> int:

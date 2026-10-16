@@ -672,3 +672,26 @@ def test_hele_server_staat_in_discord_volgorde():
     aanroepen = server.volgorde_aanroepen
     tweede = draai(server, 24)
     assert tweede.wijzigingen == [] and server.volgorde_aanroepen == aanroepen, "tweede keer verandert niets"
+
+
+def test_mislukte_volgorde_houdt_de_berichten_niet_tegen():
+    """Zoals live: als Discord de nieuwe volgorde weigert, moeten de berichten toch bijgewerkt worden."""
+    server = NepServer()
+    draai(server, 24)
+    for c in server.channels:  # volgorde verstoren, zodat de bot hem wil rechtzetten
+        c.position = -c.position
+
+    async def weigert(guild_id, data, reason=None):
+        raise discord.HTTPException(type("R", (), {"status": 400, "reason": "Bad Request"})(), "Invalid Form Body")
+
+    server._state.http.bulk_channel_update = weigert
+    ki = INHOUD["start-hier"]
+    b = ki.berichten[0]
+    nieuw_embed = {**b.embeds[1], "titel": "Welkom, trainer! (nieuw)"}
+    gewijzigd = {**INHOUD, "start-hier": replace(ki, berichten=(replace(b, embeds=(b.embeds[0], nieuw_embed)), *ki.berichten[1:]))}
+    resultaat = draai(server, 24, inhoud=gewijzigd)
+
+    assert any("fase 'volgorde' mislukt" in w for w in resultaat.waarschuwingen)
+    assert "bericht bijwerken: #start-hier/welkom" in resultaat.wijzigingen
+    pins = eigen_vastgepind(kanaal(server, "start-hier"), server)
+    assert pins[0].embeds[1].title == "Welkom, trainer! (nieuw)"

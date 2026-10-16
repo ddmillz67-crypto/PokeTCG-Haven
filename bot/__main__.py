@@ -55,12 +55,18 @@ def maak_bot() -> HavenBot | None:
         inrichter = Inrichter(guild, config, stap, dry_run, inhoud)
         try:
             await inrichter.uitvoeren()
-        except discord.HTTPException as fout:
-            log.error("inrichten mislukt: %s", fout)
+        except Exception as fout:  # noqa: BLE001 - de bot moet blijven draaien, ook als inrichten misgaat
+            log.exception("inrichten mislukt")
+            inrichter.waarschuw(f"inrichten mislukt: {type(fout).__name__}: {fout}")
+        versie = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7] or "onbekend"
         samenvatting = (
-            f"🛠️ Setup tot en met stap {stap}{' (dry-run, niets veranderd)' if dry_run else ''}: "
+            f"🛠️ Setup tot en met stap {stap}{' (dry-run, niets veranderd)' if dry_run else ''} · versie `{versie}`: "
             f"{len(inrichter.wijzigingen)} wijziging(en), {len(inrichter.waarschuwingen)} waarschuwing(en)."
         )
+        if inrichter.wijzigingen:
+            samenvatting += "\n" + "\n".join(f"• {w}" for w in inrichter.wijzigingen[:15])
+            if len(inrichter.wijzigingen) > 15:
+                samenvatting += f"\n• … en nog {len(inrichter.wijzigingen) - 15}"
         log.info(samenvatting)
         for w in inrichter.waarschuwingen:
             log.warning(w)
