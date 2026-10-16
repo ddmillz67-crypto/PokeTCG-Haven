@@ -273,16 +273,6 @@ class Inrichter:
                 result[naam] = cat
         return result
 
-    async def categorieen_ordenen(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
-        """Zet de categorieën in de volgorde van de config (STAFF onderaan)."""
-        gewenst = [n for n in self.config.categorieen if n in categorieen]
-        huidig = [c.name for c in sorted(categorieen.values(), key=lambda c: c.position)]
-        if huidig == gewenst:
-            return
-        if self.wijzig("categorieën in de juiste volgorde zetten"):
-            for positie, naam in enumerate(gewenst):
-                await categorieen[naam].edit(position=positie, reason="PokeTCG Haven setup")
-
     def zoek_kanaal(self, kanaal: Kanaal) -> discord.abc.GuildChannel | None:
         if kanaal.naam in self.aangemaakt:
             return self.aangemaakt[kanaal.naam]
@@ -396,37 +386,63 @@ class Inrichter:
             except discord.HTTPException as fout:
                 self.waarschuw(f"{kanaal.naam}: bijwerken mislukt ({fout.status}: {fout.text})")
 
-    async def kanalen_ordenen(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
-        """Zet de kanalen binnen elke categorie in de volgorde van de config.
+    @staticmethod
+    def is_spraak(ch) -> bool:
+        return ch.type in (discord.ChannelType.voice, discord.ChannelType.stage_voice)
 
-        Discord sorteert tekst- en forumkanalen apart van spraakkanalen, dus we ordenen per groep.
-        Kanalen zonder categorie (de ledenteller) komen helemaal bovenaan.
+    @classmethod
+    def weergave(cls, kanalen: list) -> list:
+        """De volgorde zoals Discord hem toont: eerst de losse kanalen, dan elke categorie
+        met daarin eerst de tekst- en forumkanalen en daaronder de spraakkanalen."""
+        sleutel = lambda c: (c.position, c.id)
+        categorieen = sorted((c for c in kanalen if isinstance(c, discord.CategoryChannel)), key=sleutel)
+        lijst = []
+        for parent in [None, *categorieen]:
+            pid = parent.id if parent else None
+            kinderen = sorted((c for c in kanalen if not isinstance(c, discord.CategoryChannel) and c.category_id == pid), key=sleutel)
+            lijst += ([parent] if parent else []) + [c for c in kinderen if not cls.is_spraak(c)] + [c for c in kinderen if cls.is_spraak(c)]
+        return lijst
+
+    async def volgorde_rechtzetten(self) -> None:
+        """Zet alle categorieën en kanalen in één keer in de volgorde van het plan.
+
+        Categorieën volgen de config (STAFF onderaan); kanalen binnen een categorie volgen de config,
+        met tekst en forums boven spraak, zoals Discord dat altijd toont. De ledenteller staat helemaal
+        bovenaan. Kanalen die niet in het plan staan, blijven bestaan en komen onderaan hun categorie.
+        Alles gaat in één API-aanroep, zodat Discord niets tussendoor kan schuiven.
         """
-        kanalen = await self.guild.fetch_channels() if not self.dry_run else list(self.guild.channels)
-        groepen: dict[tuple, list] = {}
+        kanalen = list(self.guild.channels) if self.dry_run else list(await self.guild.fetch_channels())
+        sleutel = lambda c: (c.position, c.id)
+        cats = {c.name: c for c in kanalen if isinstance(c, discord.CategoryChannel)}
+        uit_plan = [cats[n] for n in self.config.categorieen if n in cats]
+        overig = sorted((c for c in cats.values() if c not in uit_plan), key=sleutel)
+        staff = [c for c in uit_plan if "STAFF" in c.name.upper()]
+        cat_volgorde = [c for c in uit_plan if c not in staff] + overig + staff
+
+        per_cat: dict = {}
         for k in self.config.kanalen_tot_stap(self.tot_stap):
             ch = discord.utils.find(
                 lambda c: not isinstance(c, discord.CategoryChannel)
                 and (c.name.startswith(f"{TELLER_PREFIX}{k.naam}:") if k.type == "teller" else c.name == k.naam),
                 kanalen,
             )
-            if ch is None:
-                continue
-            spraak = isinstance(ch, (discord.VoiceChannel, discord.StageChannel))
-            groepen.setdefault((k.categorie, spraak), []).append(ch)
-        for (categorie, _), gewenst in groepen.items():
-            huidig = sorted(gewenst, key=lambda c: (c.position, c.id))
-            if [c.id for c in huidig] == [c.id for c in gewenst]:
-                continue
-            if not self.wijzig(f"kanalen ordenen in {categorie or 'bovenaan'}"):
-                continue
-            cat = categorieen.get(categorie) if categorie else None
-            if categorie is None:
-                for ch in reversed(gewenst):
-                    await ch.move(beginning=True, category=None, sync_permissions=False, reason="PokeTCG Haven setup")
-            else:
-                for ch in gewenst:
-                    await ch.move(end=True, category=cat, sync_permissions=False, reason="PokeTCG Haven setup")
+            if ch is not None:
+                per_cat.setdefault(ch.category_id, []).append(ch)
+
+        gewenst = []
+        for parent in [None, *cat_volgorde]:
+            pid = parent.id if parent else None
+            uit_config = per_cat.get(pid, [])
+            rest = sorted((c for c in kanalen if not isinstance(c, discord.CategoryChannel) and c.category_id == pid and c not in uit_config), key=sleutel)
+            alle = uit_config + rest
+            gewenst += ([parent] if parent else []) + [c for c in alle if not self.is_spraak(c)] + [c for c in alle if self.is_spraak(c)]
+
+        if [c.id for c in self.weergave(kanalen)] == [c.id for c in gewenst]:
+            return
+        if not self.wijzig("categorieën en kanalen in de juiste volgorde zetten"):
+            return
+        posities = [{"id": c.id, "position": i} for i, c in enumerate(gewenst)]
+        await self.guild._state.http.bulk_channel_update(self.guild.id, posities, reason="PokeTCG Haven setup")
 
     async def community_aanzetten(self) -> None:
         s = self.config.server
@@ -608,8 +624,7 @@ class Inrichter:
         await self.kanalen_inrichten(categorieen)
         await self.automod_inrichten()
         await self.opruimen()
-        await self.categorieen_ordenen(categorieen)
-        await self.kanalen_ordenen(categorieen)
+        await self.volgorde_rechtzetten()
         await self.berichten_inrichten()
 
 

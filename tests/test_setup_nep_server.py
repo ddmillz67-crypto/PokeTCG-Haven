@@ -74,6 +74,16 @@ class _NepBasis:
         self._nep_tags = list(waarde)
 
     @property
+    def type(self):
+        return {
+            "voice": discord.ChannelType.voice,
+            "stage": discord.ChannelType.stage_voice,
+            "news": discord.ChannelType.news,
+            "forum": discord.ChannelType.forum,
+            "category": discord.ChannelType.category,
+        }.get(self.soort, discord.ChannelType.text)
+
+    @property
     def overwrites(self):
         return self._nep_ow
 
@@ -261,6 +271,17 @@ class NepServer:
         self.public_updates_channel = None
         self.api_calls = 0
         self.community_fout = False
+        server = self
+
+        class _Http:
+            async def bulk_channel_update(self, guild_id, data, reason=None):
+                server.api_calls += 1
+                server.volgorde_aanroepen = getattr(server, "volgorde_aanroepen", 0) + 1
+                per_id = {c.id: c for c in server.channels}
+                for regel in data:
+                    per_id[regel["id"]].position = regel["position"]
+
+        self._state = type("State", (), {"http": _Http()})()
 
     @property
     def channels(self):
@@ -349,7 +370,7 @@ def test_stap_0_volgens_bouwplan():
     server = NepServer()
     eerste = draai(server, 0)
     assert len([r for r in server.roles if r.name not in {"@everyone", "PokeTCG Haven"}]) == 36
-    assert [c.name for c in server.categories] == ["📌 START", "🔒 STAFF"]
+    assert [c.name for c in sorted(server.categories, key=lambda c: c.position)] == ["📌 START", "🔒 STAFF"]
     assert sorted(c.name for c in server.overige) == ["regels", "staff-logs", "📊 Leden: 1.234"]
     assert kanaal(server, "📊 Leden: 1.234").category_id is None, "de teller staat bovenaan, buiten een categorie"
     assert server.automod == ["Haven: scam-woorden", "Haven: invites", "Haven: mention-spam", "Haven: spam"]
@@ -394,7 +415,7 @@ def test_stap_voor_stap_bouwen_komt_uit_op_hetzelfde_als_alles_ineens():
     ineens = NepServer()
     draai(ineens, 27)
     assert sorted(c.name for c in stapsgewijs.channels) == sorted(c.name for c in ineens.channels)
-    assert [c.name for c in stapsgewijs.categories] == [c.name for c in ineens.categories]
+    assert zoals_discord_het_toont(stapsgewijs) == zoals_discord_het_toont(ineens)
 
 
 def test_categorieen_in_volgorde_met_staff_onderaan():
@@ -402,7 +423,7 @@ def test_categorieen_in_volgorde_met_staff_onderaan():
     for stap in (0, 6, 24):  # STAFF bestaat al vanaf stap 0, de rest komt later
         draai(server, stap)
     config = laad_config(CONFIG)
-    assert [c.name for c in server.categories] == config.categorieen
+    assert [c.name for c in sorted(server.categories, key=lambda c: c.position)] == config.categorieen
 
 
 def test_news_en_stage_worden_echt_aangemaakt_dankzij_community():
@@ -610,3 +631,44 @@ def test_bestaande_server_wordt_omgezet_naar_alleen_nederlands():
     assert namen.count("chat") == 1 and namen.count("Lounge") == 1, "niets dubbel aangemaakt"
     assert [r.name for r in server.roles].count("Lid") == 1
     assert resultaat.waarschuwingen == []
+
+
+def zoals_discord_het_toont(server):
+    return [c.name for c in Inrichter.weergave(server.channels)]
+
+
+def test_hele_server_staat_in_discord_volgorde():
+    """Ook een rommelige bestaande server komt precies in de volgorde van het plan."""
+    import random
+
+    server = NepServer()
+    draai(server, 24)
+    rnd = random.Random(7)
+    for c in server.channels:  # alles door elkaar gooien, zoals na handmatig slepen
+        c.position = rnd.randint(-50, 50)
+    eigen_cat = NepCategorie(server, "Mijn eigen hoekje", {})
+    eigen_cat.position = -99
+    server.categories.append(eigen_cat)
+    start = next(c for c in server.categories if c.name == "📌 START")
+    eigen_kanaal = NepTekstkanaal(server, "mijn-kanaal", "text", start)
+    eigen_kanaal.position = -99
+    server.overige.append(eigen_kanaal)
+
+    draai(server, 24)
+    config = laad_config(CONFIG)
+    volgorde = zoals_discord_het_toont(server)
+
+    verwacht = [c for c in config.categorieen if "STAFF" not in c] + ["Mijn eigen hoekje", "🔒 STAFF"]
+    assert [n for n in volgorde if n in verwacht] == verwacht, "categorieën op volgorde, STAFF onderaan"
+    assert volgorde[0].startswith("📊 Leden"), "de ledenteller staat helemaal bovenaan"
+    assert volgorde[1] == "📌 START"
+    start_blok = volgorde[2 : volgorde.index("🧡 COMMUNITY")]
+    assert start_blok == ["start-hier", "regels", "server-tour", "aankondigingen", "rollen", "mijn-kanaal"]
+    chat_blok = volgorde[volgorde.index("💬 CHAT & HANDEL") + 1 : volgorde.index("📅 RELEASES")]
+    assert chat_blok == ["chat", "ruilen-verkopen", "vragen-hulp", "winkel-radar", "Lounge"], "spraak onder tekst"
+    release_blok = volgorde[volgorde.index("📅 RELEASES") + 1 : volgorde.index("🛒 POKETCG HAVEN STORE")]
+    assert release_blok == ["release-kalender", "restocks", "success", "Releaseavond"]
+
+    aanroepen = server.volgorde_aanroepen
+    tweede = draai(server, 24)
+    assert tweede.wijzigingen == [] and server.volgorde_aanroepen == aanroepen, "tweede keer verandert niets"
