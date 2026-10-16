@@ -1,0 +1,403 @@
+"""Richt de Discord-server in volgens config/server.yaml.
+
+Gebruik:
+    python -m scripts.setup_server --tot-stap 0 --dry-run   # laat zien wat er zou veranderen
+    python -m scripts.setup_server --tot-stap 0             # voert het echt uit
+
+Het script is idempotent: het maakt alleen aan wat ontbreekt en zet bestaande rollen,
+kanalen en rechten gelijk aan de configuratie. Je kunt het dus na elke stap opnieuw draaien.
+Kanalen en rollen die niet in de config staan, worden nooit verwijderd.
+
+Nodig in de omgeving (of in een .env-bestand): DISCORD_TOKEN en DISCORD_GUILD_ID.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import logging
+import os
+import sys
+from pathlib import Path
+
+import aiohttp
+import discord
+
+from haven.config import (
+    ConfigFout,
+    Kanaal,
+    ServerConfig,
+    categorie_rechten,
+    kanaal_rechten,
+    laad_config,
+)
+
+ROOT = Path(__file__).resolve().parent.parent
+log = logging.getLogger("setup")
+
+# Wat de bot zelf altijd mag in elk kanaal dat hij beheert.
+BOT_RECHTEN = discord.PermissionOverwrite(
+    view_channel=True,
+    send_messages=True,
+    embed_links=True,
+    attach_files=True,
+    manage_messages=True,
+    manage_threads=True,
+    read_message_history=True,
+)
+
+AUTOMOD_PREFIX = "Haven: "
+
+
+def laad_env(pad: Path) -> None:
+    """Minimale .env-lezer: KEY=waarde per regel; bestaande variabelen winnen."""
+    if not pad.exists():
+        return
+    for regel in pad.read_text(encoding="utf-8").splitlines():
+        regel = regel.strip()
+        if not regel or regel.startswith("#") or "=" not in regel:
+            continue
+        sleutel, waarde = regel.split("=", 1)
+        os.environ.setdefault(sleutel.strip(), waarde.strip().strip('"').strip("'"))
+
+
+class Inrichter:
+    def __init__(self, guild: discord.Guild, config: ServerConfig, tot_stap: int, dry_run: bool):
+        self.guild = guild
+        self.config = config
+        self.tot_stap = tot_stap
+        self.dry_run = dry_run
+        self.wijzigingen: list[str] = []
+        self.waarschuwingen: list[str] = []
+        self.rollen: dict[str, discord.Role] = {}
+
+    # -- hulpfuncties -------------------------------------------------------
+
+    def wijzig(self, tekst: str) -> bool:
+        """Registreert een wijziging. Geeft True als die echt uitgevoerd moet worden."""
+        self.wijzigingen.append(tekst)
+        log.info("%s%s", "[dry-run] " if self.dry_run else "", tekst)
+        return not self.dry_run
+
+    def waarschuw(self, tekst: str) -> None:
+        self.waarschuwingen.append(tekst)
+        log.warning(tekst)
+
+    def overwrites(self, spec: dict[str, dict[str, bool]]) -> dict:
+        result: dict = {}
+        for naam, rechten in spec.items():
+            doel = self.guild.default_role if naam == "@everyone" else self.rollen.get(naam)
+            if doel is None:
+                # Alleen mogelijk in dry-run, als de rol nog niet bestaat.
+                doel = discord.Object(id=0)
+            result[doel] = discord.PermissionOverwrite(**rechten)
+        result[self.guild.me] = BOT_RECHTEN
+        return result
+
+    @staticmethod
+    def zelfde_overwrites(huidig: dict, gewenst: dict) -> bool:
+        def norm(ow: dict) -> dict:
+            return {getattr(k, "id", k): v.pair() for k, v in ow.items()}
+
+        return norm(huidig) == norm(gewenst)
+
+    # -- stappen ------------------------------------------------------------
+
+    async def server_instellingen(self) -> None:
+        s = self.config.server
+        gewenst = {}
+        if "verificatie" in s:
+            gewenst["verification_level"] = discord.VerificationLevel[s["verificatie"]]
+        if "expliciete_inhoud" in s:
+            gewenst["explicit_content_filter"] = discord.ContentFilter[s["expliciete_inhoud"]]
+        if "meldingen" in s:
+            gewenst["default_notifications"] = discord.NotificationLevel[s["meldingen"]]
+        anders = {k: v for k, v in gewenst.items() if getattr(self.guild, k) != v}
+        if anders and self.wijzig(f"serverinstellingen: {', '.join(f'{k}={v.name}' for k, v in anders.items())}"):
+            await self.guild.edit(**anders, reason="PokeTCG Haven setup")
+
+    async def rollen_inrichten(self) -> None:
+        bestaand = {r.name: r for r in self.guild.roles}
+        for rol in self.config.rollen:
+            rechten = discord.Permissions(**{p: True for p in rol.rechten})
+            kleur = discord.Colour(rol.kleur)
+            huidig = bestaand.get(rol.naam)
+            if huidig is None:
+                if self.wijzig(f"rol aanmaken: {rol.naam}"):
+                    huidig = await self.guild.create_role(
+                        name=rol.naam,
+                        colour=kleur,
+                        hoist=rol.apart_tonen,
+                        mentionable=rol.noembaar,
+                        permissions=rechten,
+                        reason="PokeTCG Haven setup",
+                    )
+            elif (
+                huidig.colour != kleur
+                or huidig.hoist != rol.apart_tonen
+                or huidig.mentionable != rol.noembaar
+                or huidig.permissions != rechten
+            ):
+                if huidig >= self.guild.me.top_role:
+                    self.waarschuw(f"rol {rol.naam} staat boven de bot en kan niet aangepast worden")
+                elif self.wijzig(f"rol bijwerken: {rol.naam}"):
+                    await huidig.edit(
+                        colour=kleur,
+                        hoist=rol.apart_tonen,
+                        mentionable=rol.noembaar,
+                        permissions=rechten,
+                        reason="PokeTCG Haven setup",
+                    )
+            if huidig is not None:
+                self.rollen[rol.naam] = huidig
+
+        await self.rollen_ordenen()
+
+    async def rollen_ordenen(self) -> None:
+        """Zet de rollen in de volgorde van de config, onderaan de lijst (onder de botrol).
+
+        De posities worden vanaf onderen geteld (1 = net boven @everyone). Zo hangt het
+        niet af van de positie van de botrol in de cache, die na het aanmaken van rollen
+        verouderd kan zijn.
+        """
+        volgorde = [self.rollen[r.naam] for r in self.config.rollen if r.naam in self.rollen]
+        beweegbaar = [r for r in volgorde if r < self.guild.me.top_role]
+        if len(beweegbaar) != len(volgorde):
+            self.waarschuw("sommige rollen staan boven de bot; sleep de botrol in Discord helemaal naar boven")
+        huidig = [r.id for r in sorted(beweegbaar, key=lambda r: r.position, reverse=True)]
+        gewenst = [r.id for r in beweegbaar]
+        if huidig == gewenst:
+            return
+        posities = {rol: len(beweegbaar) - i for i, rol in enumerate(beweegbaar)}
+        if self.wijzig("rollen in de juiste volgorde zetten"):
+            await self.guild.edit_role_positions(positions=posities, reason="PokeTCG Haven setup")
+
+    async def categorieen_inrichten(self) -> dict[str, discord.CategoryChannel]:
+        bestaand = {c.name: c for c in self.guild.categories}
+        result: dict[str, discord.CategoryChannel] = {}
+        for naam in self.config.categorieen_tot_stap(self.tot_stap):
+            gewenst = self.overwrites(categorie_rechten(self.config, naam))
+            cat = bestaand.get(naam)
+            if cat is None:
+                if self.wijzig(f"categorie aanmaken: {naam}"):
+                    cat = await self.guild.create_category(naam, overwrites=gewenst, reason="PokeTCG Haven setup")
+            elif not self.zelfde_overwrites(cat.overwrites, gewenst):
+                if self.wijzig(f"rechten categorie bijwerken: {naam}"):
+                    await cat.edit(overwrites=gewenst, reason="PokeTCG Haven setup")
+            if cat is not None:
+                result[naam] = cat
+        return result
+
+    def zoek_kanaal(self, kanaal: Kanaal) -> discord.abc.GuildChannel | None:
+        for ch in self.guild.channels:
+            if isinstance(ch, discord.CategoryChannel):
+                continue
+            if ch.name == kanaal.naam:
+                return ch
+        return None
+
+    async def kanalen_inrichten(self, categorieen: dict[str, discord.CategoryChannel]) -> None:
+        community = "COMMUNITY" in self.guild.features
+        for kanaal in self.config.kanalen_tot_stap(self.tot_stap):
+            cat = categorieen.get(kanaal.categorie)
+            gewenst = self.overwrites(kanaal_rechten(self.config, kanaal))
+            ch = self.zoek_kanaal(kanaal)
+            if ch is None:
+                await self.kanaal_aanmaken(kanaal, cat, gewenst, community)
+            else:
+                await self.kanaal_bijwerken(kanaal, ch, cat, gewenst)
+
+    async def kanaal_aanmaken(self, kanaal: Kanaal, cat, overwrites: dict, community: bool) -> None:
+        soort = kanaal.type
+        if soort in {"news", "stage"} and not community:
+            vervanger = "text" if soort == "news" else "voice"
+            self.waarschuw(
+                f"{kanaal.naam}: type '{soort}' vereist Community-modus; ik maak een '{vervanger}'-kanaal. "
+                "Zet Community aan en draai het script opnieuw om het om te zetten."
+            )
+            soort = vervanger
+        if not self.wijzig(f"kanaal aanmaken: {kanaal.naam} ({soort}) in {kanaal.categorie}"):
+            return
+        gemeen = dict(category=cat, overwrites=overwrites, reason="PokeTCG Haven setup")
+        try:
+            if soort in {"text", "news"}:
+                await self.guild.create_text_channel(
+                    kanaal.naam, topic=kanaal.onderwerp, slowmode_delay=kanaal.slowmode,
+                    news=soort == "news", **gemeen,
+                )
+            elif soort == "forum":
+                await self.guild.create_forum(
+                    kanaal.naam, topic=kanaal.onderwerp, slowmode_delay=kanaal.slowmode,
+                    available_tags=[discord.ForumTag(name=t) for t in kanaal.tags], **gemeen,
+                )
+            elif soort == "voice":
+                await self.guild.create_voice_channel(kanaal.naam, **gemeen)
+            elif soort == "stage":
+                await self.guild.create_stage_channel(kanaal.naam, **gemeen)
+        except discord.HTTPException as fout:
+            self.waarschuw(f"{kanaal.naam}: aanmaken mislukt ({fout.status}: {fout.text})")
+
+    async def kanaal_bijwerken(self, kanaal: Kanaal, ch, cat, overwrites: dict) -> None:
+        wijzigingen: dict = {}
+        if cat is not None and ch.category_id != cat.id:
+            wijzigingen["category"] = cat
+        if not self.zelfde_overwrites(ch.overwrites, overwrites):
+            wijzigingen["overwrites"] = overwrites
+        if isinstance(ch, (discord.TextChannel, discord.ForumChannel)):
+            if (ch.topic or "") != kanaal.onderwerp:
+                wijzigingen["topic"] = kanaal.onderwerp
+            if ch.slowmode_delay != kanaal.slowmode:
+                wijzigingen["slowmode_delay"] = kanaal.slowmode
+        if isinstance(ch, discord.ForumChannel):
+            huidige_tags = {t.name for t in ch.available_tags}
+            if not set(kanaal.tags) <= huidige_tags:
+                # Bestaande tags blijven staan (posts kunnen ze gebruiken); alleen ontbrekende erbij.
+                extra = [discord.ForumTag(name=t) for t in kanaal.tags if t not in huidige_tags]
+                wijzigingen["available_tags"] = [*ch.available_tags, *extra]
+        if wijzigingen and self.wijzig(f"kanaal bijwerken: {kanaal.naam} ({', '.join(wijzigingen)})"):
+            try:
+                await ch.edit(**wijzigingen, reason="PokeTCG Haven setup")
+            except discord.HTTPException as fout:
+                self.waarschuw(f"{kanaal.naam}: bijwerken mislukt ({fout.status}: {fout.text})")
+
+    async def automod_inrichten(self) -> None:
+        am = self.config.automod
+        if not am:
+            return
+        try:
+            bestaand = {r.name: r for r in await self.guild.fetch_automod_rules()}
+        except discord.HTTPException as fout:
+            self.waarschuw(f"AutoMod-regels lezen mislukt ({fout.status}); controleer de rechten van de bot")
+            return
+
+        # Via de API ophalen: een kanaal dat net is aangemaakt staat soms nog niet in de cache.
+        logkanaal = None
+        if not self.dry_run:
+            kanalen = await self.guild.fetch_channels()
+            logkanaal = discord.utils.find(
+                lambda c: isinstance(c, discord.TextChannel) and c.name == "staff-logs", kanalen
+            )
+        uitgezonderd = [self.rollen[n] for n in self.config.staffrollen if n in self.rollen]
+
+        def acties(melding: str) -> list[discord.AutoModRuleAction]:
+            lijst = [discord.AutoModRuleAction(custom_message=melding)]
+            if logkanaal is not None:
+                lijst.append(discord.AutoModRuleAction(channel_id=logkanaal.id))
+            return lijst
+
+        regels = [
+            (
+                "scam-woorden",
+                discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.keyword, keyword_filter=am.get("scam_woorden", [])),
+                "Dit bericht lijkt op oplichting en is tegengehouden. / This message looks like a scam and was blocked.",
+            ),
+            (
+                "invites",
+                discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.keyword, regex_patterns=am.get("invite_regex", [])),
+                "Uitnodigingen voor andere servers zijn niet toegestaan. / Invites to other servers are not allowed.",
+            ),
+            (
+                "mention-spam",
+                discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.mention_spam, mention_limit=int(am.get("max_mentions", 5))),
+                "Te veel mentions in één bericht. / Too many mentions in one message.",
+            ),
+            (
+                "spam",
+                discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.spam),
+                "Dit bericht lijkt op spam. / This message looks like spam.",
+            ),
+        ]
+        for kort, trigger, melding in regels:
+            naam = AUTOMOD_PREFIX + kort
+            if naam in bestaand:
+                continue
+            if not self.wijzig(f"AutoMod-regel aanmaken: {naam}"):
+                continue
+            try:
+                await self.guild.create_automod_rule(
+                    name=naam,
+                    event_type=discord.AutoModRuleEventType.message_send,
+                    trigger=trigger,
+                    actions=acties(melding),
+                    enabled=True,
+                    exempt_roles=uitgezonderd,
+                    reason="PokeTCG Haven setup",
+                )
+            except discord.HTTPException as fout:
+                # Discord staat bijvoorbeeld maar één spam-regel per server toe.
+                self.waarschuw(f"{naam}: aanmaken mislukt ({fout.status}: {fout.text})")
+
+    async def uitvoeren(self) -> None:
+        if not self.guild.me.guild_permissions.administrator:
+            self.waarschuw("de bot heeft geen Administrator-recht; sommige stappen kunnen mislukken")
+        await self.server_instellingen()
+        await self.rollen_inrichten()
+        categorieen = await self.categorieen_inrichten()
+        await self.kanalen_inrichten(categorieen)
+        await self.automod_inrichten()
+
+
+async def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Richt de PokeTCG Haven-server in.")
+    parser.add_argument("--tot-stap", type=int, default=0, help="maak alles t/m dit stapnummer (0-24)")
+    parser.add_argument("--dry-run", action="store_true", help="laat alleen zien wat er zou veranderen")
+    parser.add_argument("--config", default=str(ROOT / "config" / "server.yaml"))
+    args = parser.parse_args(argv)
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    laad_env(ROOT / ".env")
+
+    try:
+        config = laad_config(args.config)
+    except ConfigFout as fout:
+        log.error("config klopt niet: %s", fout)
+        return 2
+
+    token = os.environ.get("DISCORD_TOKEN")
+    guild_id = os.environ.get("DISCORD_GUILD_ID")
+    if not token or not guild_id or not guild_id.isdigit():
+        log.error("DISCORD_TOKEN en DISCORD_GUILD_ID (een getal) moeten gezet zijn")
+        return 2
+
+    client = discord.Client(intents=discord.Intents.default())
+    uitkomst = {"code": 1}
+
+    @client.event
+    async def on_ready() -> None:
+        try:
+            guild = client.get_guild(int(guild_id))
+            if guild is None:
+                log.error("de bot zit niet in server %s; nodig hem eerst uit", guild_id)
+                return
+            log.info("verbonden als %s met server '%s'", client.user, guild.name)
+            inrichter = Inrichter(guild, config, args.tot_stap, args.dry_run)
+            await inrichter.uitvoeren()
+            log.info(
+                "klaar: %d wijziging(en)%s, %d waarschuwing(en)",
+                len(inrichter.wijzigingen),
+                " (niet uitgevoerd, dry-run)" if args.dry_run else "",
+                len(inrichter.waarschuwingen),
+            )
+            uitkomst["code"] = 0
+        finally:
+            await client.close()
+
+    try:
+        await client.start(token)
+    except discord.LoginFailure:
+        log.error("het token is ongeldig; maak in de Developer Portal een nieuw token aan")
+        return 2
+    except discord.PrivilegedIntentsRequired:
+        log.error("zet de benodigde intents aan onder Bot in de Developer Portal")
+        return 2
+    except (OSError, aiohttp.ClientError) as fout:
+        log.error("kan discord.com niet bereiken (%s); controleer het netwerk of de Allowed domains", fout)
+        return 3
+    finally:
+        if not client.is_closed():
+            await client.close()
+    return uitkomst["code"]
+
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))

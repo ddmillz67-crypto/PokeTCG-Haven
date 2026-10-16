@@ -1,0 +1,105 @@
+# PokeTCG Haven: rollen, kanalen en rechten.
+# Dit bestand is de bron van waarheid. scripts/setup_server.py maakt aan wat ontbreekt
+# en zet de rechten gelijk aan wat hier staat.
+#
+# zichtbaar:
+#   iedereen  -> ook nieuwe leden zonder rol
+#   taal      -> leden met NL/BE of EN
+#   <rolnaam> -> alleen die rollen
+# Admin en Mod zien altijd alles.
+
+server:
+  verificatie: medium            # account ouder dan 5 minuten op Discord
+  expliciete_inhoud: all_members # alle media van alle leden laten scannen
+  meldingen: only_mentions       # standaard geen ping bij elk bericht
+
+taalrollen: [NL/BE, EN]
+staffrollen: [Admin, Mod]
+
+# Volgorde = hiërarchie, van hoog naar laag. Kleuren volgen de huisstijl.
+rollen:
+  - { naam: Admin,            kleur: "#E74C3C", apart_tonen: true,  rechten: [administrator] }
+  - { naam: Mod,              kleur: "#E67E22", apart_tonen: true,  rechten: [manage_messages, moderate_members, manage_threads, view_audit_log, mute_members, move_members] }
+  - { naam: Founder,          kleur: "#F7C948", apart_tonen: true }
+  - { naam: Elite,            kleur: "#8E44AD", apart_tonen: true }
+  - { naam: Sniper,           kleur: "#2ECC71", apart_tonen: true }
+  - { naam: Haven Partner,    kleur: "#1E6FD9", apart_tonen: true }
+  - { naam: Verified Trader,  kleur: "#1ABC9C" }
+  - { naam: NL/BE }
+  - { naam: EN }
+  - { naam: Noord-NL }
+  - { naam: Midden-NL }
+  - { naam: Zuid-NL }
+  - { naam: Vlaanderen }
+  - { naam: Brussel }
+  - { naam: Wallonië }
+  - { naam: Release-ping,     noembaar: true }
+
+# stap = het nummer uit het stappenplan. setup_server.py --tot-stap N maakt alles t/m stap N.
+categorieen:
+  - naam: "🔒 STAFF"
+    kanalen:
+      - { naam: staff-logs, stap: 0, zichtbaar: [Admin, Mod], onderwerp: "Logs van de Haven-bot en AutoMod" }
+
+  - naam: "📌 START"
+    kanalen:
+      - { naam: start-hier,     stap: 1, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "Welkom bij PokeTCG Haven • Kies je taal / choose your language" }
+      - { naam: regels,         stap: 2, zichtbaar: iedereen, alleen_lezen: true, onderwerp: "Regels / Rules" }
+      - { naam: aankondigingen, stap: 3, zichtbaar: taal, alleen_lezen: true, type: news, onderwerp: "Nieuws van het team / Team news" }
+      - { naam: rollen,         stap: 4, zichtbaar: taal, alleen_lezen: true, onderwerp: "Kies je pings en regio / Pick your pings and region" }
+
+  - naam: "📅 RELEASES"
+    kanalen:
+      - { naam: release-kalender, stap: 5, zichtbaar: taal, alleen_lezen: true, onderwerp: "Alle releases met datum, tijd en limieten" }
+      - { naam: restocks,         stap: 6, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gratis alerts (10 min vertraagd) • Sniper-leden krijgen ze direct" }
+      - { naam: success,          stap: 7, zichtbaar: taal, alleen_lezen: true, onderwerp: "Gescoord! Successen van leden" }
+
+  - naam: "🇳🇱🇧🇪 NEDERLAND & BELGIË"
+    kanalen:
+      - { naam: chat-nlbe,       stap: 8,  zichtbaar: [NL/BE], slowmode: 3 }
+      - { naam: pulls-nlbe,      stap: 9,  zichtbaar: [NL/BE], onderwerp: "Alleen foto's en video's van je pulls" }
+      - { naam: winkel-radar,    stap: 10, zichtbaar: [NL/BE], alleen_lezen: true, onderwerp: "Meld voorraad in een winkel met /meld" }
+      - { naam: ruilen-verkopen, stap: 11, zichtbaar: [NL/BE], type: forum, tags: [Te koop, Gezocht, Ruil], onderwerp: "Veilig handelen • gebruik /vouch" }
+      - { naam: vragen-hulp,     stap: 12, zichtbaar: [NL/BE], type: forum, tags: [Waarde, Echt of nep, Beginner, Opgelost] }
+      - { naam: Lounge NL/BE,    stap: 8,  zichtbaar: [NL/BE], type: voice }
+
+  - naam: "🇬🇧 ENGLISH"
+    kanalen:
+      - { naam: chat-en,  stap: 13, zichtbaar: [EN], slowmode: 3 }
+      - { naam: pulls-en, stap: 14, zichtbaar: [EN], onderwerp: "Photos and videos of your pulls only" }
+      - { naam: trade-en, stap: 15, zichtbaar: [EN], type: forum, tags: [For sale, Wanted, Trade], onderwerp: "Trade safely • use /vouch" }
+      - { naam: help-en,  stap: 16, zichtbaar: [EN], type: forum, tags: [Value, Real or fake, Beginner, Solved] }
+      - { naam: Lounge EN, stap: 13, zichtbaar: [EN], type: voice }
+
+  - naam: "💎 PREMIUM"
+    kanalen:
+      - { naam: sniper-nlbe,  stap: 17, zichtbaar: [Sniper, Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor NL/BE-winkels" }
+      - { naam: sniper-eu,    stap: 18, zichtbaar: [Elite, Founder], alleen_lezen: true, onderwerp: "Directe alerts voor DE/FR-winkels" }
+      - { naam: elite-lounge, stap: 19, zichtbaar: [Elite, Founder] }
+      - { naam: group-buys,   stap: 20, zichtbaar: [Elite, Founder], type: forum, tags: [Open, Vol, Afgerond] }
+      - { naam: grading,      stap: 21, zichtbaar: [Elite, Founder] }
+      - { naam: Releaseavond, stap: 19, zichtbaar: taal, type: stage }
+
+  - naam: "🏪 PARTNERS"
+    kanalen:
+      - { naam: winkel-partners, stap: 22, zichtbaar: taal, alleen_lezen: true, schrijvers: [Haven Partner], onderwerp: "Restocks en events van partnerwinkels" }
+
+  - naam: "🛟 SUPPORT"
+    kanalen:
+      - { naam: tickets,    stap: 23, zichtbaar: taal, alleen_lezen: true, onderwerp: "Open een ticket / Open a ticket" }
+      - { naam: suggesties, stap: 24, zichtbaar: taal, slowmode: 60 }
+
+automod:
+  # Wordt in stap 0 aangemaakt. Admin en Mod zijn uitgezonderd.
+  scam_woorden:
+    - "*dm me to buy*"
+    - "*dm voor prijs*"
+    - "*dm for price*"
+    - "*free nitro*"
+    - "*gratis nitro*"
+    - "*discord.gift*"
+    - "*steamcommunity.com/gift*"
+    - "*airdrop*"
+  invite_regex:
+    - "(discord\\.gg|discord(app)?\\.com/invite)/[a-zA-Z0-9-]+"
+  max_mentions: 5
