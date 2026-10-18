@@ -39,7 +39,7 @@ TYPES = {
 
 # naam, titel, ondertitel, type
 BANNERS = [
-    ("welkom", "Welkom in de Haven", "De gezelligste Pokémon TCG-community van Nederland en België", "vuur"),
+    # "welkom" komt uit scripts/warm.py (warme, filmische stijl)
     ("regels", "De huisregels", "Elke goede trainer kent de regels van het spel", "vechten"),
     ("tour", "Jouw route door de server", "Van eerste stap tot vaste trainer", "water"),
     ("aankondigingen", "Aankondigingen", "Nieuws, events, winnaars en mijlpalen", "elektrisch"),

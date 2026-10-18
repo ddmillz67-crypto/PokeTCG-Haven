@@ -621,15 +621,7 @@ def founderpas() -> Path:
 
 def main() -> None:
     paden = [
-        stappenstrook(
-            "start-stappen", "JOUW EERSTE STAPPEN", "vuur",
-            [
-                ("Kom binnen", "Eén klik en je ziet de hele community", "vuur"),
-                ("Huisregels", "8 korte afspraken, met het waarom erbij", "vechten"),
-                ("Server-tour", "In een paar schermen weet je alles", "water"),
-            ],
-            ("Badge Wegwijs", "Je eerste badge als trainer in de Haven"),
-        ),
+        # "start-stappen" komt uit scripts/warm.py
         stappenstrook(
             "veilig-handelen", "VEILIG HANDELEN IN 4 STAPPEN", "metaal",
             [

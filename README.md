@@ -46,7 +46,7 @@ Elk kanaal begint met een banner in de huisstijl, en elke embed toont het PH-log
 
 Een banner aanpassen: wijzig de tekst in `scripts/banners.py`, draai `python -m scripts.banners` en push. De bot ziet dat het beeld veranderd is en werkt het bericht bij.
 
-De infographics in de Start-kanalen (eerste stappen, routekaart, huisregels, veilig handelen, trainerskaart, weekritme) komen uit `scripts/infographics.py`: `python -m scripts.infographics`.
+De infographics in de Start-kanalen (eerste stappen, routekaart, huisregels, veilig handelen, trainerskaart, weekritme) komen uit `scripts/infographics.py`: `python -m scripts.infographics`. De welkomstbanner en de eerste stappen in #start-hier hebben een warme, filmische stijl en komen uit `scripts/warm.py`: `python -m scripts.warm`.
 
 ## Hernoemen en opruimen
 
