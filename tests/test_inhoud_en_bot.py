@@ -157,7 +157,7 @@ def test_bot_laadt_en_elke_knop_heeft_een_handler(config, inhoud, tmp_path):
 
     ontbreekt, commandos, planners = asyncio.run(start())
     assert ontbreekt == []
-    assert {"tour", "level", "vouch", "meld", "alert", "giveaway", "invite", "release", "pings", "opgelost"} <= commandos
+    assert {"tour", "level", "vouch", "meld", "alert", "giveaway", "invite", "release", "pings", "opgelost", "winkel"} <= commandos
     assert planners == {"radar", "restock", "rol_weg"}
 
 
@@ -217,3 +217,38 @@ def test_tweede_voorstelling_wordt_herkend(config, inhoud, tmp_path):
     assert leeg is None
     assert gevonden is eerste
     assert na_verwijderen is None
+
+
+def test_winkelmonitor_plaatst_alert_bij_restock(config, inhoud, tmp_path):
+    def etb(beschikbaar):
+        return [{"id": 1, "title": "Pokémon Elite Trainer Box", "handle": "etb", "vendor": "Pokémon", "tags": [],
+                 "variants": [{"id": 11, "available": beschikbaar, "price": "54.95"}]}]
+
+    async def start():
+        bot = HavenBot(config, inhoud, 123, Database(tmp_path / "t.db"))
+        async with bot:
+            await bot.load_extension("bot.cogs.alerts")
+            cog = bot.get_cog("Alerts")
+            bot.db.uitvoeren("INSERT INTO winkels (naam, url, land) VALUES ('Testwinkel', 'https://test.nl', 'nlbe')")
+            geplaatst, logs, rondes = [], [], [etb(False), etb(True), etb(True)]
+
+            async def haal(w):
+                return rondes.pop(0)
+
+            async def plaats(a):
+                geplaatst.append(a)
+
+            async def log(t):
+                logs.append(t)
+
+            cog.haal_producten, cog.plaats_alert, bot.log = haal, plaats, log
+            for _ in range(3):
+                await cog.controleer_winkel(cog.winkels()[0])
+            rij = bot.db.een("SELECT * FROM winkels")
+            await bot.remove_cog("Alerts")
+            return geplaatst, rij
+
+    geplaatst, rij = asyncio.run(start())
+    assert [a.url for a in geplaatst] == ["https://test.nl/products/etb"], "precies één alert, bij de restock"
+    assert geplaatst[0].prijs == "€ 54,95"
+    assert rij["sealed"] == 1 and rij["op_voorraad"] == 1 and rij["fout"] is None

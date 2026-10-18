@@ -29,13 +29,14 @@ Eén programma, de **Haven-bot**, doet twee dingen:
 | Ledenteller | Het voicekanaal "📊 Leden: …" bovenaan, elk kwartier bijgewerkt |
 | Markt | `/vouch`, `/vouches`, `/verify`, controle op foto's en tags, één collectiepost per lid, `/opgelost` |
 | Winkel-radar | `/meld`: direct in #sniper-nlbe, na 10 minuten in #winkel-radar met een regio-ping. Een melding verdwijnt na 2× 👎 |
-| Alerts | `/alert`: direct voor Sniper, na 10 minuten in #restocks. Verder: Gescoord!, `/uitverkocht` en persoonlijke DM's via `/pings` |
-| Releases | `/release` met de datum en een releasedraad |
+| Alerts | Automatische winkelmonitors en `/alert`: direct voor Sniper, na 10 minuten in #restocks. Verder: Gescoord!, `/uitverkocht` en persoonlijke DM's via `/pings` |
+| Winkels | `/winkel toevoegen`, `/winkel lijst`, `/winkel aanuit` en `/winkel verwijderen` (alleen team) |
+| Releases | `/release` met de datum, een releasedraad, een releaseavond-event en een automatisch overzicht |
 | Store | De knoppen "Meer info" en "FAQ". De koopknoppen gebruiken de Whop-links uit de omgeving |
 | Invites | `/invite` met een persoonlijke link. Bij 3 actieve leden krijg je 7 dagen Sniper Proef, bij 10 de rol Haven Ambassadeur |
 
 **Wat nog niet automatisch gaat:**
-- **Winkelmonitors:** elke winkel werkt anders, dus die bouwen en testen we per winkel in stap 21. Tot die tijd plaatst het team alerts met `/alert`.
+- **Winkelmonitors:** werken voor winkels op Shopify. Voeg ze toe vanuit Discord met `/winkel toevoegen`; de bot test de winkel meteen en meldt hoeveel Pokémon-producten hij vindt. Alleen sealed producten (ETB's, boxen, boosters, collecties) die van uitverkocht naar op voorraad gaan, geven een alert. Andere winkels: `/alert` door het team.
 - **Discord Onboarding:** die stel je zelf in Discord in na stap 9.
 - **Whop:** koppel je zelf met de Discord-rollen Sniper, Elite en Founder.
 

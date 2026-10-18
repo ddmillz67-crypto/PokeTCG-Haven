@@ -1,9 +1,8 @@
 """Restock-alerts: hoe een alert eruitziet, en de koppeling voor automatische monitors.
 
-Een monitor controleert winkelpagina's en levert AlertData aan. De Haven-bot plaatst die
-direct in #sniper-nlbe (of #sniper-eu) en 10 minuten later in #restocks. Er zijn nog geen
-winkelmonitors ingebouwd: elke winkel werkt anders en moet zorgvuldig getest worden (stap 21).
-Tot die tijd plaatst het team alerts met /alert.
+Alerts komen van de winkelmonitors (haven/monitors.py, winkels toevoegen met /winkel toevoegen)
+of van het team met /alert. De Haven-bot plaatst ze direct in #sniper-nlbe (of #sniper-eu)
+en 10 minuten later in #restocks.
 """
 
 from __future__ import annotations
@@ -59,16 +58,3 @@ def alert_embed(a: AlertData, *, vertraagd: bool = False, uitverkocht: bool = Fa
         embed.set_thumbnail(url=a.afbeelding)
     embed.set_footer(text=FOOTER)
     return embed
-
-
-class Monitor:
-    """Basis voor een winkelmonitor. Implementeer `controleer` en registreer de monitor in MONITORS."""
-
-    naam = "monitor"
-    interval_seconden = 60
-
-    async def controleer(self) -> list[AlertData]:  # pragma: no cover - interface
-        raise NotImplementedError
-
-
-MONITORS: list[Monitor] = []

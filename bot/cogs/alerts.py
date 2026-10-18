@@ -7,12 +7,14 @@ import json
 import time
 from dataclasses import asdict
 
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
 from bot.kern import PREFIX, HavenBot, antwoord
-from haven.alerts import CATEGORIEEN, MONITORS, VERTRAGING_GRATIS_SECONDEN, AlertData, alert_embed
+from haven.alerts import CATEGORIEEN, VERTRAGING_GRATIS_SECONDEN, AlertData, alert_embed
+from haven.monitors import INTERVAL_SECONDEN, MAX_PAGINAS, USER_AGENT, Winkel, feed_url, normaliseer_url, samenvatting, verwerk
 
 PREMIUM = {"Sniper", "Sniper Proef", "Elite", "Founder"}
 
@@ -43,12 +45,17 @@ class Alerts(commands.Cog):
         bot.actie("alert:gescoord", self.gescoord)
         bot.planner("restock", self.restock)
         self.laatst: dict[str, float] = {}
+        self.standen: dict[str, dict[int, bool]] = {}  # per winkel de voorraad van de vorige ronde
+        self.sessie: aiohttp.ClientSession | None = None
 
     async def cog_load(self) -> None:
+        self.sessie = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20), headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
         self.monitors.start()
 
     async def cog_unload(self) -> None:
         self.monitors.cancel()
+        if self.sessie:
+            await self.sessie.close()
 
     def knoppen(self, alert_id: int, a: AlertData, *, vertraagd: bool, uitverkocht: bool = False) -> discord.ui.View:
         view = discord.ui.View(timeout=None)
@@ -175,20 +182,147 @@ class Alerts(commands.Cog):
         huidig = {r["categorie"] for r in self.bot.db.alle("SELECT categorie FROM pings WHERE user_id = ?", (interaction.user.id,))}
         await antwoord(interaction, "Voor welke producten wil je een DM?", view=PingKeuze(self, huidig))
 
-    @tasks.loop(seconds=60)
+    # -- winkelmonitors -----------------------------------------------------------------
+
+    async def haal_producten(self, w: Winkel) -> list[dict]:
+        producten: list[dict] = []
+        for pagina in range(1, MAX_PAGINAS + 1):
+            async with self.sessie.get(feed_url(w, pagina)) as r:
+                if r.status != 200:
+                    raise RuntimeError(f"de winkel antwoordt met HTTP {r.status}")
+                if "json" not in r.headers.get("Content-Type", ""):
+                    raise RuntimeError("geen Shopify-winkel (geen productoverzicht gevonden)")
+                deel = (await r.json()).get("products", [])
+            producten += deel
+            if len(deel) < 250:
+                break
+            await asyncio.sleep(1)
+        return producten
+
+    def winkels(self, alleen_aan: bool = True) -> list:
+        return self.bot.db.alle("SELECT * FROM winkels" + (" WHERE aan = 1" if alleen_aan else "") + " ORDER BY naam")
+
+    @staticmethod
+    def winkel_uit(rij) -> Winkel:
+        return Winkel(rij["naam"], rij["url"], rij["land"], rij["collectie"] or "", rij["affiliate"] or "")
+
+    async def controleer_winkel(self, rij) -> None:
+        w = self.winkel_uit(rij)
+        try:
+            producten = await self.haal_producten(w)
+        except Exception as fout:  # noqa: BLE001 - één winkel mag de rest niet tegenhouden
+            melding = str(fout)[:200] or type(fout).__name__
+            if rij["fout"] != melding:  # alleen melden als er iets verandert, niet elke ronde
+                await self.bot.log(f"⚠️ Winkel **{w.naam}** niet bereikbaar: {melding}")
+            self.bot.db.uitvoeren("UPDATE winkels SET laatst = ?, fout = ? WHERE naam = ?", (time.time(), melding, w.naam))
+            return
+        alerts, self.standen[w.naam] = verwerk(w, producten, self.standen.get(w.naam))
+        totaal, sealed, voorraad = samenvatting(producten)
+        self.bot.db.uitvoeren(
+            "UPDATE winkels SET laatst = ?, fout = NULL, producten = ?, sealed = ?, op_voorraad = ? WHERE naam = ?",
+            (time.time(), totaal, sealed, voorraad, w.naam),
+        )
+        if rij["fout"]:
+            await self.bot.log(f"✅ Winkel **{w.naam}** is weer bereikbaar.")
+        for a in alerts[:5]:  # nooit meer dan 5 alerts per winkel per ronde
+            await self.plaats_alert(a)
+
+    @tasks.loop(seconds=30)
     async def monitors(self) -> None:
-        """Automatische winkelmonitors (haven/alerts.py). Zolang MONITORS leeg is, doet dit niets."""
-        for monitor in MONITORS:
-            try:
-                for a in await monitor.controleer():
-                    await self.plaats_alert(a)
-            except Exception as fout:  # noqa: BLE001
-                await self.bot.log(f"⚠️ Monitor {monitor.naam} faalde: {fout}")
+        """Elke 30 seconden: welke winkels zijn aan de beurt (elke INTERVAL_SECONDEN)?"""
+        nu = time.time()
+        for rij in self.winkels():
+            if rij["laatst"] and nu - rij["laatst"] < INTERVAL_SECONDEN and rij["naam"] in self.standen:
+                continue
+            await self.controleer_winkel(rij)
 
     @monitors.before_loop
     async def _wacht(self) -> None:
         await self.bot.wait_until_ready()
         await self.bot.setup_klaar.wait()
+
+    winkel_groep = app_commands.Group(name="winkel", description="Winkels voor de restock-monitor (alleen team)", default_permissions=discord.Permissions(manage_guild=True))
+
+    @winkel_groep.command(name="toevoegen", description="Voeg een Shopify-winkel toe aan de restock-monitor")
+    @app_commands.describe(
+        naam="Naam zoals leden hem zien", url="Webadres, bijvoorbeeld https://winkel.nl", land="Waar de winkel zit",
+        collectie="Optioneel: alleen deze collectie volgen (het stukje na /collections/ in de link)",
+        affiliate="Optioneel: affiliate-link met {url} op de plek van de productlink",
+    )
+    @app_commands.choices(land=[app_commands.Choice(name="Nederland/België (Sniper)", value="nlbe"), app_commands.Choice(name="Duitsland/Frankrijk (Elite)", value="eu")])
+    async def winkel_toevoegen(
+        self, interaction: discord.Interaction, naam: app_commands.Range[str, 2, 40], url: str,
+        land: app_commands.Choice[str], collectie: str | None = None, affiliate: str | None = None,
+    ) -> None:
+        try:
+            basis = normaliseer_url(url)
+        except ValueError as fout:
+            await antwoord(interaction, f"❌ {fout}.")
+            return
+        if affiliate and "{url}" not in affiliate:
+            await antwoord(interaction, "❌ Zet `{url}` in de affiliate-link, op de plek waar de productlink moet komen.")
+            return
+        await interaction.response.defer(ephemeral=True)
+        w = Winkel(naam, basis, land.value, (collectie or "").strip("/ "), affiliate or "")
+        try:
+            producten = await self.haal_producten(w)
+        except Exception as fout:  # noqa: BLE001
+            await antwoord(interaction, f"❌ **{naam}** werkt niet met de monitor: {fout}.\nAlleen winkels op Shopify worden ondersteund.")
+            return
+        totaal, sealed, voorraad = samenvatting(producten)
+        self.bot.db.uitvoeren(
+            "INSERT OR REPLACE INTO winkels (naam, url, land, collectie, affiliate, aan, laatst, fout, producten, sealed, op_voorraad) VALUES (?, ?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)",
+            (w.naam, w.url, w.land, w.collectie, w.affiliate, time.time(), totaal, sealed, voorraad),
+        )
+        _, self.standen[w.naam] = verwerk(w, producten, None)  # beginstand: vanaf nu telt elke restock
+        tip = "" if sealed else "\n\n⚠️ Ik vond nog **geen Pokémon sealed producten**. Klopt de collectie? Je kunt het later opnieuw proberen."
+        await antwoord(
+            interaction,
+            f"✅ **{naam}** staat in de monitor ({'NL/BE' if w.land == 'nlbe' else 'DE/FR'}).\n"
+            f"Gevonden: **{totaal}** producten, waarvan **{sealed}** Pokémon sealed (**{voorraad}** op voorraad).\n"
+            f"Elke {INTERVAL_SECONDEN // 60} minuten kijk ik opnieuw; gaat iets van uitverkocht naar op voorraad, dan volgt een alert.{tip}",
+        )
+        await self.bot.log(f"🏪 Winkel **{naam}** toegevoegd aan de monitor door {interaction.user.mention}.")
+
+    @winkel_groep.command(name="lijst", description="Bekijk alle winkels in de restock-monitor")
+    async def winkel_lijst(self, interaction: discord.Interaction) -> None:
+        rijen = self.winkels(alleen_aan=False)
+        if not rijen:
+            await antwoord(interaction, "Er staan nog geen winkels in de monitor. Voeg er een toe met `/winkel toevoegen`.")
+            return
+        regels = []
+        for r in rijen:
+            if not r["aan"]:
+                status = "⏸️ uit"
+            elif r["fout"]:
+                status = f"⚠️ {r['fout'][:80]}"
+            else:
+                status = f"✅ {r['sealed'] or 0} sealed, {r['op_voorraad'] or 0} op voorraad"
+            wanneer = f" · <t:{int(r['laatst'])}:R>" if r["laatst"] else ""
+            regels.append(f"**{r['naam']}** ({'NL/BE' if r['land'] == 'nlbe' else 'DE/FR'}) · {status}{wanneer}\n{r['url']}")
+        await antwoord(interaction, embed=self.bot.embed("merk", f"🏪  Restock-monitor · {len(rijen)} winkel(s)", "\n\n".join(regels)[:4000]))
+
+    @winkel_groep.command(name="aanuit", description="Zet een winkel tijdelijk uit of weer aan")
+    async def winkel_aanuit(self, interaction: discord.Interaction, naam: str) -> None:
+        rij = self.bot.db.een("SELECT aan FROM winkels WHERE naam = ?", (naam,))
+        if rij is None:
+            await antwoord(interaction, "Onbekende winkel. Bekijk de namen met `/winkel lijst`.")
+            return
+        nieuw = 0 if rij["aan"] else 1
+        self.bot.db.uitvoeren("UPDATE winkels SET aan = ? WHERE naam = ?", (nieuw, naam))
+        self.standen.pop(naam, None)  # bij weer aanzetten eerst een nieuwe beginstand
+        await antwoord(interaction, f"{'▶️' if nieuw else '⏸️'} **{naam}** staat nu {'aan' if nieuw else 'uit'}.")
+
+    @winkel_groep.command(name="verwijderen", description="Haal een winkel uit de restock-monitor")
+    async def winkel_verwijderen(self, interaction: discord.Interaction, naam: str) -> None:
+        cur = self.bot.db.uitvoeren("DELETE FROM winkels WHERE naam = ?", (naam,))
+        self.standen.pop(naam, None)
+        await antwoord(interaction, f"🗑️ **{naam}** is verwijderd." if cur.rowcount else "Onbekende winkel. Bekijk de namen met `/winkel lijst`.")
+
+    @winkel_aanuit.autocomplete("naam")
+    @winkel_verwijderen.autocomplete("naam")
+    async def _winkelnamen(self, interaction: discord.Interaction, huidig: str) -> list[app_commands.Choice[str]]:
+        return [app_commands.Choice(name=r["naam"], value=r["naam"]) for r in self.winkels(alleen_aan=False) if huidig.lower() in r["naam"].lower()][:25]
 
 
 async def setup(bot: HavenBot) -> None:

@@ -43,6 +43,10 @@ CREATE TABLE IF NOT EXISTS pings (user_id INTEGER, categorie TEXT, PRIMARY KEY (
 CREATE TABLE IF NOT EXISTS invites (code TEXT PRIMARY KEY, user_id INTEGER);
 CREATE TABLE IF NOT EXISTS beloningen (user_id INTEGER, soort TEXT, PRIMARY KEY (user_id, soort));
 CREATE TABLE IF NOT EXISTS toppulls (bericht_id INTEGER PRIMARY KEY, user_id INTEGER, toestemming INTEGER);
+CREATE TABLE IF NOT EXISTS winkels (
+    naam TEXT PRIMARY KEY, url TEXT, land TEXT, collectie TEXT, affiliate TEXT, aan INTEGER NOT NULL DEFAULT 1,
+    laatst REAL, fout TEXT, producten INTEGER, sealed INTEGER, op_voorraad INTEGER
+);
 CREATE TABLE IF NOT EXISTS releases (id INTEGER PRIMARY KEY AUTOINCREMENT, naam TEXT, tijd REAL, met_tijd INTEGER, winkels TEXT, limiet TEXT, bericht_url TEXT);
 CREATE TABLE IF NOT EXISTS radar (bericht_id INTEGER PRIMARY KEY, user_id INTEGER, tijd REAL, weg INTEGER NOT NULL DEFAULT 0);
 """
